@@ -19,6 +19,8 @@ public final class Inventories {
     private static final int CHEST_SLOT = 38;
     private static final int LEG_SLOT = 37;
     private static final int BOOT_SLOT = 36;
+    private static final int OFF_HAND_SLOT = 40;
+
     private static final boolean HAS_OFFHAND = VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_9_R01);
     private static final int INVENTORY_SIZE = HAS_OFFHAND ? 41 : 40;
 
@@ -400,6 +402,6 @@ public final class Inventories {
     }
 
     private static boolean isArmorSlot(final int slot) {
-        return slot == HELM_SLOT || slot == CHEST_SLOT || slot == LEG_SLOT || slot == BOOT_SLOT;
+        return slot == HELM_SLOT || slot == CHEST_SLOT || slot == LEG_SLOT || slot == BOOT_SLOT || slot == OFF_HAND_SLOT;
     }
 }
