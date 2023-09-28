@@ -75,15 +75,15 @@ public class Backup implements Runnable {
         taskLock = new CompletableFuture<>();
         if ("save-all".equalsIgnoreCase(command)) {
             final CommandSender cs = server.getConsoleSender();
-            server.dispatchCommand(cs, "save-all");
+            ess.dispatchCommand(cs, "save-all");
             active = false;
             taskLock.complete(new Object());
             return;
         }
         ess.getLogger().log(Level.INFO, tl("backupStarted"));
         final CommandSender cs = server.getConsoleSender();
-        server.dispatchCommand(cs, "save-all");
-        server.dispatchCommand(cs, "save-off");
+        ess.dispatchCommand(cs, "save-all");
+        ess.dispatchCommand(cs, "save-off");
 
         ess.runTaskAsynchronously(() -> {
             try {
@@ -113,7 +113,7 @@ public class Backup implements Runnable {
                 class BackupEnableSaveTask implements Runnable {
                     @Override
                     public void run() {
-                        server.dispatchCommand(cs, "save-on");
+                        ess.dispatchCommand(cs, "save-on");
                         if (!ess.getSettings().isAlwaysRunBackup() && ess.getOnlinePlayers().isEmpty()) {
                             stopTask();
                         }

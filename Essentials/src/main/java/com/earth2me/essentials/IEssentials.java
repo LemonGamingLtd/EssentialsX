@@ -137,6 +137,8 @@ public interface IEssentials extends Plugin {
 
     void ensureGlobal(Runnable runnable);
 
+    void dispatchCommand(CommandSender commandSender, String command);
+
     PermissionsHandler getPermissionsHandler();
 
     AlternativeCommandsHandler getAlternativeCommandsHandler();

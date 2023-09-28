@@ -98,6 +98,7 @@ import net.ess3.provider.providers.PaperSerializationProvider;
 import net.ess3.provider.providers.PaperServerStateProvider;
 import net.essentialsx.api.v2.services.BalanceTop;
 import net.essentialsx.api.v2.services.mail.MailService;
+import org.bukkit.Bukkit;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -105,6 +106,7 @@ import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.command.PluginCommand;
 import org.bukkit.command.PluginIdentifiableCommand;
 import org.bukkit.command.TabCompleter;
@@ -1276,6 +1278,19 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             taskLock.get();
         } catch (InterruptedException | ExecutionException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    @Override
+    public void dispatchCommand(CommandSender commandSender, String command) {
+        if (commandSender instanceof Entity) {
+            scheduleEntityDelayedTask((Entity) commandSender, () -> Bukkit.dispatchCommand(commandSender, command));
+        }
+        else if (commandSender instanceof ConsoleCommandSender) {
+            scheduleGlobalDelayedTask(() -> Bukkit.dispatchCommand(commandSender, command));
+        }
+        else {
+            throw new IllegalArgumentException("Invalid command sender provided!");
         }
     }
 
