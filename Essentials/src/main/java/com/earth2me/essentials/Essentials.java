@@ -1285,11 +1285,9 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     public void dispatchCommand(CommandSender commandSender, String command) {
         if (commandSender instanceof Entity) {
             scheduleEntityDelayedTask((Entity) commandSender, () -> Bukkit.dispatchCommand(commandSender, command));
-        }
-        else if (commandSender instanceof ConsoleCommandSender) {
+        } else if (commandSender instanceof ConsoleCommandSender) {
             scheduleGlobalDelayedTask(() -> Bukkit.dispatchCommand(commandSender, command));
-        }
-        else {
+        } else {
             throw new IllegalArgumentException("Invalid command sender provided!");
         }
     }
