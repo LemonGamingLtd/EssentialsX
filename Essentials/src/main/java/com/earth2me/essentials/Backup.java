@@ -1,5 +1,6 @@
 package com.earth2me.essentials;
 
+import com.earth2me.essentials.utils.AdventureUtil;
 import net.ess3.api.IEssentials;
 import net.ess3.provider.SchedulingProvider;
 import org.bukkit.Server;
@@ -12,7 +13,7 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.logging.Level;
 
-import static com.earth2me.essentials.I18n.tl;
+import static com.earth2me.essentials.I18n.tlLiteral;
 
 public class Backup implements Runnable {
     private transient final Server server;
@@ -80,7 +81,7 @@ public class Backup implements Runnable {
             taskLock.complete(new Object());
             return;
         }
-        ess.getLogger().log(Level.INFO, tl("backupStarted"));
+        ess.getLogger().log(Level.INFO, AdventureUtil.miniToLegacy(tlLiteral("backupStarted")));
         final CommandSender cs = server.getConsoleSender();
         ess.dispatchCommand(cs, "save-all");
         ess.dispatchCommand(cs, "save-off");
@@ -119,7 +120,7 @@ public class Backup implements Runnable {
                         }
                         active = false;
                         taskLock.complete(new Object());
-                        ess.getLogger().log(Level.INFO, tl("backupFinished"));
+                        ess.getLogger().log(Level.INFO, AdventureUtil.miniToLegacy(tlLiteral("backupFinished")));
                     }
                 }
 
