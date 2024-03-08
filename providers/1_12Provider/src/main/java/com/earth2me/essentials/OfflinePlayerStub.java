@@ -74,14 +74,14 @@ public class OfflinePlayerStub implements Player {
 
     public OfflinePlayerStub(final UUID uuid, final Server server) {
         this.server = server;
-        this.world = server.getWorlds().get(0);
+        this.world = server.getWorlds().stream().findFirst().orElseThrow(IllegalStateException::new);
         this.base = server.getOfflinePlayer(uuid);
         this.name = base.getName();
     }
 
     public OfflinePlayerStub(final String name, final Server server) {
         this.server = server;
-        this.world = server.getWorlds().get(0);
+        this.world = server.getWorlds().stream().findFirst().orElseThrow(IllegalStateException::new);
         this.base = server.getOfflinePlayer(name);
         this.name = name;
     }
