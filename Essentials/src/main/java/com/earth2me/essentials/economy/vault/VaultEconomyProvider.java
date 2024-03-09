@@ -325,7 +325,7 @@ public class VaultEconomyProvider implements Economy {
         if (player instanceof Player) {
             userPlayer = (Player) player;
         } else {
-            final OfflinePlayerStub essPlayer = new OfflinePlayerStub(player.getUniqueId(), ess.getServer());
+            final OfflinePlayerStub essPlayer = new OfflinePlayerStub(player.getUniqueId(), ess.getServer(), ess.getSettings().getDefaultWorld());
             essPlayer.setName(player.getName());
             userPlayer = essPlayer;
         }

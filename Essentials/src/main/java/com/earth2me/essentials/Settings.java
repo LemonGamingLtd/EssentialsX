@@ -17,9 +17,11 @@ import net.ess3.api.IEssentials;
 import net.kyori.adventure.text.format.NamedTextColor;
 import net.kyori.adventure.text.format.TextColor;
 import net.kyori.adventure.text.minimessage.tag.Tag;
+import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 import org.bukkit.Material;
+import org.bukkit.World;
 import org.bukkit.command.Command;
 import org.bukkit.event.EventPriority;
 import org.bukkit.inventory.ItemStack;
@@ -141,6 +143,7 @@ public class Settings implements net.ess3.api.ISettings {
     private double maxProjectileSpeed;
     private boolean removeEffectsOnHeal;
     private Map<String, String> worldAliases;
+    private String defaultWorld;
     private Tag primaryColor = Tag.styling(NamedTextColor.GOLD);
     private Tag secondaryColor = Tag.styling(NamedTextColor.RED);
 
@@ -617,6 +620,15 @@ public class Settings implements net.ess3.api.ISettings {
     }
 
     @Override
+    public World getDefaultWorld() {
+        return Bukkit.getWorld(defaultWorld);
+    }
+
+    private String _getDefaultWorld() {
+        return config.getString("default-world-name", "world");
+    }
+
+    @Override
     public boolean getAnnounceNewPlayers() {
         return !config.getString("newbies.announce-format", "-").isEmpty();
     }
@@ -786,6 +798,7 @@ public class Settings implements net.ess3.api.ISettings {
         bindingItemPolicy = _getBindingItemsPolicy();
         currencySymbol = _getCurrencySymbol();
         worldAliases = _getWorldAliases();
+        defaultWorld = _getDefaultWorld();
         primaryColor = _getPrimaryColor();
         secondaryColor = _getSecondaryColor();
 

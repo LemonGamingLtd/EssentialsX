@@ -318,7 +318,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
     private void _dispose() {
         if (!base.isOnline()) {
-            this.base = new OfflinePlayerStub(getConfigUUID(), ess.getServer());
+            this.base = new OfflinePlayerStub(getConfigUUID(), ess.getServer(), ess.getSettings().getDefaultWorld());
         }
         cleanup();
     }

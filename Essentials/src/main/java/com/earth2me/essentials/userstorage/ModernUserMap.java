@@ -166,7 +166,7 @@ public class ModernUserMap extends CacheLoader<UUID, User> implements IUserMap {
 
         final File userFile = getUserFile(uuid);
         if (userFile.exists()) {
-            player = new OfflinePlayerStub(uuid, ess.getServer());
+            player = new OfflinePlayerStub(uuid, ess.getServer(), ess.getSettings().getDefaultWorld());
             user = new User(player, ess);
             final String accName = user.getLastAccountName();
             ((OfflinePlayerStub) player).setName(accName);
