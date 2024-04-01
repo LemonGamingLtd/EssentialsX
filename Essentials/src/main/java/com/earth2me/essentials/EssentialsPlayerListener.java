@@ -324,6 +324,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
 
     @EventHandler(priority = EventPriority.HIGHEST)
     public void onPlayerJoin(final PlayerJoinEvent event) {
+        System.out.println("CALLED JOIN EVENT!");
         final String joinMessage = event.getJoinMessage();
         ess.runTaskAsynchronously(() -> delayedJoin(event.getPlayer(), joinMessage));
 
@@ -343,6 +344,11 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
 
         ess.getBackup().onPlayerJoin();
         final User dUser = ess.getUser(player);
+        if (dUser.hasJoined()) {
+            return;
+        }
+
+        dUser.setJoined(true);
         dUser.update(player);
 
         dUser.startTransaction();
