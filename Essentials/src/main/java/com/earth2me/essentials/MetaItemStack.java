@@ -144,43 +144,49 @@ public class MetaItemStack {
     }
 
     public void parseStringMeta(final CommandSource sender, final boolean allowUnsafe, final String[] string, final int fromArg, final IEssentials ess) throws Exception {
-        if (string[fromArg].startsWith("{") && hasMetaPermission(sender, "vanilla", false, true, ess)) {
-            try {
-                stack = ess.getServer().getUnsafe().modifyItemStack(stack, Joiner.on(' ').join(Arrays.asList(string).subList(fromArg, string.length)));
-            } catch (final NullPointerException npe) {
-                if (ess.getSettings().isDebug()) {
-                    ess.getLogger().log(Level.INFO, "Itemstack is invalid", npe);
+        for (int i = fromArg; i < string.length; i++) {
+            if (string[i].startsWith("{") && hasMetaPermission(sender, "vanilla", false, true, ess)) {
+                try {
+                    int untilArg = string.length;
+                    for (int j = i; j < string.length; j++) {
+                        if (string[j].endsWith("}")) {
+                            untilArg = j;
+                        }
+                    }
+                    final String args = Joiner.on(' ').join(Arrays.asList(string).subList(i, untilArg + 1));
+                    stack = ess.getServer().getUnsafe().modifyItemStack(stack, args);
+                } catch (final NullPointerException npe) {
+                    if (ess.getSettings().isDebug()) {
+                        ess.getLogger().log(Level.INFO, "Itemstack is invalid", npe);
+                    }
+                } catch (final NoSuchMethodError nsme) {
+                    throw new TranslatableException(nsme, "noMetaJson");
+                } catch (final Throwable throwable) {
+                    throw new Exception(throwable.getMessage(), throwable);
                 }
-            } catch (final NoSuchMethodError nsme) {
-                throw new TranslatableException(nsme, "noMetaJson");
-            } catch (final Throwable throwable) {
-                throw new Exception(throwable.getMessage(), throwable);
             }
-        } else {
-            for (int i = fromArg; i < string.length; i++) {
-                addStringMeta(sender, allowUnsafe, string[i], ess);
+            addStringMeta(sender, allowUnsafe, string[i], ess);
+        }
+        if (validFirework) {
+            if (!hasMetaPermission(sender, "firework", true, true, ess)) {
+                throw new TranslatableException("noMetaFirework");
             }
-            if (validFirework) {
-                if (!hasMetaPermission(sender, "firework", true, true, ess)) {
-                    throw new TranslatableException("noMetaFirework");
-                }
-                final FireworkEffect effect = builder.build();
-                final FireworkMeta fmeta = (FireworkMeta) stack.getItemMeta();
-                fmeta.addEffect(effect);
-                if (fmeta.getEffects().size() > 1 && !hasMetaPermission(sender, "firework-multiple", true, true, ess)) {
-                    throw new TranslatableException("multipleCharges");
-                }
-                stack.setItemMeta(fmeta);
+            final FireworkEffect effect = builder.build();
+            final FireworkMeta fmeta = (FireworkMeta) stack.getItemMeta();
+            fmeta.addEffect(effect);
+            if (fmeta.getEffects().size() > 1 && !hasMetaPermission(sender, "firework-multiple", true, true, ess)) {
+                throw new TranslatableException("multipleCharges");
             }
-            if (validFireworkCharge) {
-                if (!hasMetaPermission(sender, "firework", true, true, ess)) {
-                    throw new TranslatableException("noMetaFirework");
-                }
-                final FireworkEffect effect = builder.build();
-                final FireworkEffectMeta meta = (FireworkEffectMeta) stack.getItemMeta();
-                meta.setEffect(effect);
-                stack.setItemMeta(meta);
+            stack.setItemMeta(fmeta);
+        }
+        if (validFireworkCharge) {
+            if (!hasMetaPermission(sender, "firework", true, true, ess)) {
+                throw new TranslatableException("noMetaFirework");
             }
+            final FireworkEffect effect = builder.build();
+            final FireworkEffectMeta meta = (FireworkEffectMeta) stack.getItemMeta();
+            meta.setEffect(effect);
+            stack.setItemMeta(meta);
         }
     }
 
@@ -633,7 +639,7 @@ public class MetaItemStack {
 
             PatternType patternType = null;
             try {
-                patternType = PatternType.valueOf(split[0]);
+                patternType = PatternType.getByIdentifier(split[0]);
             } catch (final Exception ignored) {
             }
 
@@ -642,7 +648,7 @@ public class MetaItemStack {
                 final Color color = Color.fromRGB(Integer.parseInt(split[1]));
                 meta.setBaseColor(DyeColor.getByColor(color));
             } else if (patternType != null) {
-                final PatternType type = PatternType.valueOf(split[0]);
+                final PatternType type = PatternType.getByIdentifier(split[0]);
                 final DyeColor color = DyeColor.getByColor(Color.fromRGB(Integer.parseInt(split[1])));
                 final org.bukkit.block.banner.Pattern pattern = new org.bukkit.block.banner.Pattern(color, type);
                 meta.addPattern(pattern);
@@ -658,7 +664,7 @@ public class MetaItemStack {
 
             PatternType patternType = null;
             try {
-                patternType = PatternType.valueOf(split[0]);
+                patternType = PatternType.getByIdentifier(split[0]);
             } catch (final Exception ignored) {
             }
 
@@ -669,7 +675,7 @@ public class MetaItemStack {
                 final Color color = Color.fromRGB(Integer.parseInt(split[1]));
                 banner.setBaseColor(DyeColor.getByColor(color));
             } else if (patternType != null) {
-                final PatternType type = PatternType.valueOf(split[0]);
+                final PatternType type = PatternType.getByIdentifier(split[0]);
                 final DyeColor color = DyeColor.getByColor(Color.fromRGB(Integer.parseInt(split[1])));
                 final org.bukkit.block.banner.Pattern pattern = new org.bukkit.block.banner.Pattern(color, type);
                 banner.addPattern(pattern);

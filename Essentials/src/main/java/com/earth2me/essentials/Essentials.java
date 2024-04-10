@@ -59,6 +59,7 @@ import net.ess3.nms.refl.providers.ReflServerStateProvider;
 import net.ess3.nms.refl.providers.ReflSpawnEggProvider;
 import net.ess3.nms.refl.providers.ReflSpawnerBlockProvider;
 import net.ess3.nms.refl.providers.ReflSyncCommandsProvider;
+import net.ess3.provider.BiomeKeyProvider;
 import net.ess3.provider.ContainerProvider;
 import net.ess3.provider.DamageEventProvider;
 import net.ess3.provider.FormattedCommandAliasProvider;
@@ -98,6 +99,7 @@ import net.ess3.provider.providers.ModernItemUnbreakableProvider;
 import net.ess3.provider.providers.ModernPersistentDataProvider;
 import net.ess3.provider.providers.ModernPlayerLocaleProvider;
 import net.ess3.provider.providers.ModernSignDataProvider;
+import net.ess3.provider.providers.PaperBiomeKeyProvider;
 import net.ess3.provider.providers.PaperContainerProvider;
 import net.ess3.provider.providers.PaperKnownCommandsProvider;
 import net.ess3.provider.providers.PaperMaterialTagProvider;
@@ -204,6 +206,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     private transient SignDataProvider signDataProvider;
     private transient SchedulingProvider schedulingProvider;
     private transient DamageEventProvider damageEventProvider;
+    private transient BiomeKeyProvider biomeKeyProvider;
     private transient Kits kits;
     private transient RandomTeleport randomTeleport;
     private transient UpdateChecker updateChecker;
@@ -499,6 +502,10 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
                 damageEventProvider = new LegacyDamageEventProvider();
             }
 
+            if (PaperLib.isPaper() && VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_19_4_R01)) {
+                biomeKeyProvider = new PaperBiomeKeyProvider();
+            }
+
             execTimer.mark("Init(Providers)");
             registerListeners(getServer().getPluginManager());
             reload();
@@ -670,6 +677,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
         final PluginManager pm = getServer().getPluginManager();
         registerListeners(pm);
 
+        AdventureUtil.setEss(this);
         bukkitAudience = BukkitAudiences.create(this);
     }
 
@@ -1200,7 +1208,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
 
     @Override
     public void broadcastTl(final String tlKey, final Object... args) {
-        broadcastTl(null, null, true, tlKey, args);
+        broadcastTl(null, null, false, tlKey, args);
     }
 
     @Override
@@ -1544,6 +1552,11 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     @Override
     public DamageEventProvider getDamageEventProvider() {
         return damageEventProvider;
+    }
+
+    @Override
+    public BiomeKeyProvider getBiomeKeyProvider() {
+        return biomeKeyProvider;
     }
 
     @Override
