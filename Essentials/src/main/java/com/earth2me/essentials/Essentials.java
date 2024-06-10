@@ -59,6 +59,7 @@ import net.ess3.nms.refl.providers.ReflServerStateProvider;
 import net.ess3.nms.refl.providers.ReflSpawnEggProvider;
 import net.ess3.nms.refl.providers.ReflSpawnerBlockProvider;
 import net.ess3.nms.refl.providers.ReflSyncCommandsProvider;
+import net.ess3.provider.BannerDataProvider;
 import net.ess3.provider.BiomeKeyProvider;
 import net.ess3.provider.ContainerProvider;
 import net.ess3.provider.DamageEventProvider;
@@ -79,8 +80,8 @@ import net.ess3.provider.SpawnerBlockProvider;
 import net.ess3.provider.SpawnerItemProvider;
 import net.ess3.provider.SyncCommandsProvider;
 import net.ess3.provider.WorldInfoProvider;
+import net.ess3.provider.providers.BaseBannerDataProvider;
 import net.ess3.provider.providers.BaseLoggerProvider;
-import net.ess3.provider.providers.BasePotionDataProvider;
 import net.ess3.provider.providers.BlockMetaSpawnerItemProvider;
 import net.ess3.provider.providers.BukkitMaterialTagProvider;
 import net.ess3.provider.providers.BukkitSchedulingProvider;
@@ -88,6 +89,7 @@ import net.ess3.provider.providers.BukkitSpawnerBlockProvider;
 import net.ess3.provider.providers.FixedHeightWorldInfoProvider;
 import net.ess3.provider.providers.FlatSpawnEggProvider;
 import net.ess3.provider.providers.FoliaSchedulingProvider;
+import net.ess3.provider.providers.LegacyBannerDataProvider;
 import net.ess3.provider.providers.LegacyDamageEventProvider;
 import net.ess3.provider.providers.LegacyItemUnbreakableProvider;
 import net.ess3.provider.providers.LegacyPlayerLocaleProvider;
@@ -98,6 +100,7 @@ import net.ess3.provider.providers.ModernDataWorldInfoProvider;
 import net.ess3.provider.providers.ModernItemUnbreakableProvider;
 import net.ess3.provider.providers.ModernPersistentDataProvider;
 import net.ess3.provider.providers.ModernPlayerLocaleProvider;
+import net.ess3.provider.providers.ModernPotionMetaProvider;
 import net.ess3.provider.providers.ModernSignDataProvider;
 import net.ess3.provider.providers.PaperBiomeKeyProvider;
 import net.ess3.provider.providers.PaperContainerProvider;
@@ -106,6 +109,7 @@ import net.ess3.provider.providers.PaperMaterialTagProvider;
 import net.ess3.provider.providers.PaperRecipeBookListener;
 import net.ess3.provider.providers.PaperSerializationProvider;
 import net.ess3.provider.providers.PaperServerStateProvider;
+import net.ess3.provider.providers.PrehistoricPotionMetaProvider;
 import net.essentialsx.api.v2.services.BalanceTop;
 import net.essentialsx.api.v2.services.mail.MailService;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
@@ -164,6 +168,7 @@ import static com.earth2me.essentials.I18n.tlLocale;
 public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     private static final Logger BUKKIT_LOGGER = Logger.getLogger("Essentials");
     private static Logger LOGGER = null;
+    public static boolean TESTING = false;
     private final transient TNTExplodeListener tntListener = new TNTExplodeListener();
     private final transient Set<String> vanishedPlayers = new LinkedHashSet<>();
     private final transient Map<String, IEssentialsCommand> commandMap = new HashMap<>();
@@ -190,6 +195,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     private transient SpawnerBlockProvider spawnerBlockProvider;
     private transient SpawnEggProvider spawnEggProvider;
     private transient PotionMetaProvider potionMetaProvider;
+    private transient BannerDataProvider bannerDataProvider;
     private transient ServerStateProvider serverStateProvider;
     private transient ContainerProvider containerProvider;
     private transient SerializationProvider serializationProvider;
@@ -233,6 +239,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     }
 
     public void setupForTesting(final Server server) throws IOException, InvalidDescriptionException {
+        TESTING = true;
         LOGGER = new BaseLoggerProvider(this, BUKKIT_LOGGER);
         schedulingProvider = new BukkitSchedulingProvider(this);
         final File dataFolder = File.createTempFile("essentialstest", "");
@@ -417,10 +424,19 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             }
 
             //Potion Meta Provider
-            if (VersionUtil.getServerBukkitVersion().isLowerThan(VersionUtil.v1_9_R01)) {
-                potionMetaProvider = new LegacyPotionMetaProvider();
+            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_20_6_R01)) {
+                potionMetaProvider = new ModernPotionMetaProvider();
+            } else if (VersionUtil.getServerBukkitVersion().isLowerThan(VersionUtil.v1_9_R01)) {
+                potionMetaProvider = new PrehistoricPotionMetaProvider();
             } else {
-                potionMetaProvider = new BasePotionDataProvider();
+                potionMetaProvider = new LegacyPotionMetaProvider();
+            }
+
+            //Banner Meta Provider
+            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_20_6_R01)) {
+                bannerDataProvider = new BaseBannerDataProvider();
+            } else {
+                bannerDataProvider = new LegacyBannerDataProvider();
             }
 
             //Server State Provider
@@ -567,6 +583,8 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     }
 
     private void registerListeners(final PluginManager pm) {
+        HandlerList.unregisterAll(this);
+
         if (getSettings().isDebug()) {
             LOGGER.log(Level.INFO, "Registering Listeners");
         }
@@ -1483,6 +1501,11 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     @Override
     public PotionMetaProvider getPotionMetaProvider() {
         return potionMetaProvider;
+    }
+
+    @Override
+    public BannerDataProvider getBannerDataProvider() {
+        return bannerDataProvider;
     }
 
     @Override
