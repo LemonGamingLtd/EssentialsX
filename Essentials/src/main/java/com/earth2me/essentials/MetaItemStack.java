@@ -11,10 +11,12 @@ import com.earth2me.essentials.utils.VersionUtil;
 import com.google.common.base.Joiner;
 import net.ess3.api.IEssentials;
 import net.ess3.api.TranslatableException;
+import net.ess3.provider.PersistentDataProvider;
 import org.bukkit.Color;
 import org.bukkit.DyeColor;
 import org.bukkit.FireworkEffect;
 import org.bukkit.Material;
+import org.bukkit.NamespacedKey;
 import org.bukkit.block.Banner;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.enchantments.Enchantment;
@@ -30,6 +32,8 @@ import org.bukkit.inventory.meta.ItemMeta;
 import org.bukkit.inventory.meta.LeatherArmorMeta;
 import org.bukkit.inventory.meta.PotionMeta;
 import org.bukkit.inventory.meta.SkullMeta;
+import org.bukkit.persistence.PersistentDataContainer;
+import org.bukkit.persistence.PersistentDataType;
 import org.bukkit.potion.PotionEffect;
 import org.bukkit.potion.PotionEffectType;
 
@@ -148,69 +152,63 @@ public class MetaItemStack {
     public void parseStringMeta(final CommandSource sender, final boolean allowUnsafe, final String[] string, final int fromArg, final IEssentials ess) throws Exception {
         final boolean nbtIsKill = VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_20_6_R01);
 
-        for (int i = fromArg; i < string.length; i++) {
+        if (string[fromArg].startsWith("{") && hasMetaPermission(sender, "vanilla", false, true, ess)) {
             if (nbtIsKill) {
                 throw new TranslatableException("noMetaNbtKill");
             }
 
-            if (string[i].startsWith("{") && hasMetaPermission(sender, "vanilla", false, true, ess)) {
-                try {
-                    int untilArg = string.length;
-                    for (int j = i; j < string.length; j++) {
-                        if (string[j].endsWith("}")) {
-                            untilArg = j;
-                        }
-                    }
-                    final String args = Joiner.on(' ').join(Arrays.asList(string).subList(i, untilArg + 1));
-                    stack = ess.getServer().getUnsafe().modifyItemStack(stack, args);
-                } catch (final NullPointerException npe) {
-                    if (ess.getSettings().isDebug()) {
-                        ess.getLogger().log(Level.INFO, "Itemstack is invalid", npe);
-                    }
-                } catch (final NoSuchMethodError nsme) {
-                    throw new TranslatableException(nsme, "noMetaJson");
-                } catch (final Throwable throwable) {
-                    throw new Exception(throwable.getMessage(), throwable);
+            try {
+                stack = ess.getServer().getUnsafe().modifyItemStack(stack, Joiner.on(' ').join(Arrays.asList(string).subList(fromArg, string.length)));
+            } catch (final NullPointerException npe) {
+                if (ess.getSettings().isDebug()) {
+                    ess.getLogger().log(Level.INFO, "Itemstack is invalid", npe);
                 }
-            } else if (string[fromArg].startsWith("[") && hasMetaPermission(sender, "vanilla", false, true, ess)) {
-                if (!nbtIsKill) {
-                    throw new TranslatableException("noMetaComponents");
-                }
+            } catch (final NoSuchMethodError nsme) {
+                throw new TranslatableException(nsme, "noMetaJson");
+            } catch (final Throwable throwable) {
+                throw new Exception(throwable.getMessage(), throwable);
+            }
+        } else if (string[fromArg].startsWith("[") && hasMetaPermission(sender, "vanilla", false, true, ess)) {
+            if (!nbtIsKill) {
+                throw new TranslatableException("noMetaComponents");
+            }
 
-                try {
-                    final String components = Joiner.on(' ').join(Arrays.asList(string).subList(fromArg, string.length));
-                    // modifyItemStack requires that the item namespaced key is prepended to the components for some reason
-                    stack = ess.getServer().getUnsafe().modifyItemStack(stack, stack.getType().getKey() + components);
-                } catch (final NullPointerException npe) {
-                    if (ess.getSettings().isDebug()) {
-                        ess.getLogger().log(Level.INFO, "Itemstack is invalid", npe);
-                    }
-                } catch (final Throwable throwable) {
-                    throw new Exception(throwable.getMessage(), throwable);
+            try {
+                final String components = Joiner.on(' ').join(Arrays.asList(string).subList(fromArg, string.length));
+                // modifyItemStack requires that the item namespaced key is prepended to the components for some reason
+                stack = ess.getServer().getUnsafe().modifyItemStack(stack, stack.getType().getKey() + components);
+            } catch (final NullPointerException npe) {
+                if (ess.getSettings().isDebug()) {
+                    ess.getLogger().log(Level.INFO, "Itemstack is invalid", npe);
                 }
+            } catch (final Throwable throwable) {
+                throw new Exception(throwable.getMessage(), throwable);
             }
-            addStringMeta(sender, allowUnsafe, string[i], ess);
-        }
-        if (validFirework) {
-            if (!hasMetaPermission(sender, "firework", true, true, ess)) {
-                throw new TranslatableException("noMetaFirework");
+        } else {
+            for (int i = fromArg; i < string.length; i++) {
+                addStringMeta(sender, allowUnsafe, string[i], ess);
             }
-            final FireworkEffect effect = builder.build();
-            final FireworkMeta fmeta = (FireworkMeta) stack.getItemMeta();
-            fmeta.addEffect(effect);
-            if (fmeta.getEffects().size() > 1 && !hasMetaPermission(sender, "firework-multiple", true, true, ess)) {
-                throw new TranslatableException("multipleCharges");
+            if (validFirework) {
+                if (!hasMetaPermission(sender, "firework", true, true, ess)) {
+                    throw new TranslatableException("noMetaFirework");
+                }
+                final FireworkEffect effect = builder.build();
+                final FireworkMeta fmeta = (FireworkMeta) stack.getItemMeta();
+                fmeta.addEffect(effect);
+                if (fmeta.getEffects().size() > 1 && !hasMetaPermission(sender, "firework-multiple", true, true, ess)) {
+                    throw new TranslatableException("multipleCharges");
+                }
+                stack.setItemMeta(fmeta);
             }
-            stack.setItemMeta(fmeta);
-        }
-        if (validFireworkCharge) {
-            if (!hasMetaPermission(sender, "firework", true, true, ess)) {
-                throw new TranslatableException("noMetaFirework");
+            if (validFireworkCharge) {
+                if (!hasMetaPermission(sender, "firework", true, true, ess)) {
+                    throw new TranslatableException("noMetaFirework");
+                }
+                final FireworkEffect effect = builder.build();
+                final FireworkEffectMeta meta = (FireworkEffectMeta) stack.getItemMeta();
+                meta.setEffect(effect);
+                stack.setItemMeta(meta);
             }
-            final FireworkEffect effect = builder.build();
-            final FireworkEffectMeta meta = (FireworkEffectMeta) stack.getItemMeta();
-            meta.setEffect(effect);
-            stack.setItemMeta(meta);
         }
     }
 
@@ -242,6 +240,11 @@ public class MetaItemStack {
                 meta.setCustomModelData(value);
                 stack.setItemMeta(meta);
             }
+        } else if (split[0].equalsIgnoreCase("custom-armor-durability") && hasMetaPermission(sender, "custom-armor-durability", false, true, ess)) {
+            final int value = split.length <= 1 ? 0 : Integer.parseInt(split[1]);
+            final ItemMeta meta = stack.getItemMeta();
+            meta.getPersistentDataContainer().set(NamespacedKey.fromString("LGCustomArmor:CustomArmorDurability"), PersistentDataType.INTEGER, value);
+            stack.setItemMeta(meta);
         } else if (split[0].equalsIgnoreCase("unbreakable") && hasMetaPermission(sender, "unbreakable", false, true, ess)) {
             final boolean value = split.length <= 1 || Boolean.parseBoolean(split[1]);
             setUnbreakable(ess, stack, value);
