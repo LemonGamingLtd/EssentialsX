@@ -241,7 +241,7 @@ public class MetaItemStack {
         } else if (split[0].equalsIgnoreCase("custom-armor-durability") && hasMetaPermission(sender, "custom-armor-durability", false, true, ess)) {
             final int value = split.length <= 1 ? 0 : Integer.parseInt(split[1]);
             final ItemMeta meta = stack.getItemMeta();
-            meta.getPersistentDataContainer().set(NamespacedKey.fromString("LGCustomArmor:CustomArmorDurability"), PersistentDataType.INTEGER, value);
+            meta.getPersistentDataContainer().set(new NamespacedKey("LGCustomArmor", "CustomArmorDurability"), PersistentDataType.INTEGER, value);
             stack.setItemMeta(meta);
         } else if (split[0].equalsIgnoreCase("unbreakable") && hasMetaPermission(sender, "unbreakable", false, true, ess)) {
             final boolean value = split.length <= 1 || Boolean.parseBoolean(split[1]);
