@@ -721,7 +721,7 @@ public class Settings implements net.ess3.api.ISettings {
             if (reloadCount.get() < 2) {
                 // on startup: add plugins again in case they registered commands with the new API
                 // we need to schedule this task before any of the below tasks using _addAlternativeCommand.
-                ess.scheduleSyncDelayedTask(() -> {
+                ess.scheduleGlobalDelayedTask(() -> {
                     for (final Plugin plugin : ess.getServer().getPluginManager().getPlugins()) {
                         if (plugin.isEnabled()) {
                             ess.getAlternativeCommandsHandler().addPlugin(plugin);
