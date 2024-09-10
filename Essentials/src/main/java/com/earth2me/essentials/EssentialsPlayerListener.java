@@ -343,11 +343,6 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
 
         ess.getBackup().onPlayerJoin();
         final User dUser = ess.getUser(player);
-        if (dUser.hasJoined()) {
-            return;
-        }
-
-        dUser.setJoined(true);
         dUser.update(player);
 
         dUser.startTransaction();
@@ -457,7 +452,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
 
                 if (user.isAuthorized("essentials.fly.safelogin")) {
                     user.getBase().setFallDistance(0);
-                    if (LocationUtil.shouldFly(ess, user.getLocation())) {
+                    if (LocationUtil.shouldFly(ess, player.getLocation())) {
                         user.getBase().setAllowFlight(true);
                         user.getBase().setFlying(true);
                         if (ess.getSettings().isSendFlyEnableOnJoin()) {
