@@ -31,8 +31,8 @@ public class Commandkittycannon extends EssentialsCommand {
 
     private static Entity spawnCat(final Server server, final User user) throws Mob.MobException {
         final Cat cat = (Cat) Mob.CAT.spawn(user.getWorld(), server, user.getBase().getEyeLocation());
-        final int i = random.nextInt(Cat.Type.values().length);
-        cat.setCatType(Cat.Type.values()[i]);
+        //final int i = random.nextInt(Cat.Type.values().length);
+        //cat.setCatType(Cat.Type.values()[i]);
         cat.setTamed(true);
         cat.setBaby();
         cat.setVelocity(user.getBase().getEyeLocation().getDirection().multiply(2));
