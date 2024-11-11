@@ -267,7 +267,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
             setMoney(getMoney().subtract(value), cause);
             reciever.setMoney(reciever.getMoney().add(value), cause);
             sendTl("moneySentTo", NumberUtil.displayCurrency(value, ess), reciever.getDisplayName(), String.format("%d%%", multiplier.multiply(BigDecimal.valueOf(100)).intValue()));
-            reciever.sendTl("moneyRecievedFrom", NumberUtil.displayCurrency(value, ess), getDisplayName());
+            reciever.sendTl("moneyRecievedFrom", NumberUtil.displayCurrency(value, ess), getDisplayName(), String.format("%d%%", multiplier.multiply(BigDecimal.valueOf(100)).intValue()));
             final TransactionEvent transactionEvent = new TransactionEvent(this.getSource(), reciever, value);
             ess.getServer().getPluginManager().callEvent(transactionEvent);
         } else {
