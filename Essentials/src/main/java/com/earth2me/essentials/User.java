@@ -255,15 +255,18 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
         payUser(reciever, value, UserBalanceUpdateEvent.Cause.UNKNOWN);
     }
 
-    public void payUser(final User reciever, final BigDecimal value, final UserBalanceUpdateEvent.Cause cause) throws Exception {
+    public void payUser(final User reciever, BigDecimal value, final UserBalanceUpdateEvent.Cause cause) throws Exception {
         if (value.compareTo(BigDecimal.ZERO) < 1) {
             throw new Exception(tlLocale(playerLocale, "payMustBePositive"));
         }
 
         if (canAfford(value)) {
+            final BigDecimal multiplier = ess.getSettings().getPayUsageMultiplier();
+            value = value.multiply(multiplier);
+
             setMoney(getMoney().subtract(value), cause);
             reciever.setMoney(reciever.getMoney().add(value), cause);
-            sendTl("moneySentTo", NumberUtil.displayCurrency(value, ess), reciever.getDisplayName());
+            sendTl("moneySentTo", NumberUtil.displayCurrency(value, ess), reciever.getDisplayName(), String.format("%d%%", multiplier.multiply(BigDecimal.valueOf(100)).intValue()));
             reciever.sendTl("moneyRecievedFrom", NumberUtil.displayCurrency(value, ess), getDisplayName());
             final TransactionEvent transactionEvent = new TransactionEvent(this.getSource(), reciever, value);
             ess.getServer().getPluginManager().callEvent(transactionEvent);
