@@ -262,7 +262,7 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
         if (canAfford(value)) {
             final BigDecimal multiplier = ess.getSettings().getPayUsageMultiplier();
-            if (multiplier.compareTo(BigDecimal.ONE) > 0) {
+            if (multiplier.compareTo(BigDecimal.ONE) < 0) {
                 value = value.multiply(BigDecimal.ONE.subtract(multiplier));
             }
 
