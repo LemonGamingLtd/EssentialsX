@@ -261,12 +261,11 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
         }
 
         if (canAfford(value)) {
+            setMoney(getMoney().subtract(value), cause);
             final BigDecimal multiplier = ess.getSettings().getPayUsageMultiplier();
             if (multiplier.compareTo(BigDecimal.ONE) < 0) {
                 value = value.multiply(BigDecimal.ONE.subtract(multiplier));
             }
-
-            setMoney(getMoney().subtract(value), cause);
             reciever.setMoney(reciever.getMoney().add(value), cause);
             sendTl("moneySentTo", NumberUtil.displayCurrency(value, ess), reciever.getDisplayName(), String.format("%d%%", multiplier.multiply(BigDecimal.valueOf(100)).intValue()));
             reciever.sendTl("moneyRecievedFrom", NumberUtil.displayCurrency(value, ess), getDisplayName(), String.format("%d%%", multiplier.multiply(BigDecimal.valueOf(100)).intValue()));
