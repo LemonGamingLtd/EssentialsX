@@ -100,8 +100,4 @@ public class BukkitSchedulingProvider implements SchedulingProvider {
         return task::cancel;
     }
 
-    @Override
-    public String getDescription() {
-        return "Bukkit Scheduling Provider";
-    }
 }

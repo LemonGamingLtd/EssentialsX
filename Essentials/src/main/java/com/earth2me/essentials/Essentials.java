@@ -64,7 +64,6 @@ import net.ess3.provider.KnownCommandsProvider;
 import net.ess3.provider.PlayerLocaleProvider;
 import net.ess3.provider.ProviderListener;
 import net.ess3.provider.SchedulingProvider;
-import net.ess3.provider.SerializationProvider;
 import net.ess3.provider.ServerStateProvider;
 import net.ess3.provider.providers.BaseBannerDataProvider;
 import net.ess3.provider.providers.BaseInventoryViewProvider;

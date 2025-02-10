@@ -119,9 +119,4 @@ public class FoliaSchedulingProvider implements SchedulingProvider, Listener {
         return task::cancel;
     }
 
-    @Override
-    public String getDescription() {
-        return "Folia Scheduling Provider";
-    }
-
 }
