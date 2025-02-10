@@ -69,7 +69,9 @@ public interface IUser {
      * @return whether there is a teleport request
      */
     @Deprecated
-    boolean hasOutstandingTeleportRequest();
+    default boolean hasOutstandingTeleportRequest() {
+        return getNextTpaRequest(false, false, false) != null;
+    }
 
     IAsyncTeleport getAsyncTeleport();
 

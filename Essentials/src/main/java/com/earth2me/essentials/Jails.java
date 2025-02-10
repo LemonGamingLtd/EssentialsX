@@ -40,7 +40,7 @@ import java.util.logging.Level;
 import static com.earth2me.essentials.I18n.tlLiteral;
 
 public class Jails implements net.ess3.api.IJails {
-    private static transient boolean enabled = false;
+    private static boolean enabled = false;
     private final IEssentials ess;
     private final EssentialsConfiguration config;
     private final Map<String, LazyLocation> jails = new HashMap<>();

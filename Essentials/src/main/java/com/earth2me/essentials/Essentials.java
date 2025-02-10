@@ -59,28 +59,13 @@ import net.ess3.nms.refl.providers.ReflServerStateProvider;
 import net.ess3.nms.refl.providers.ReflSpawnEggProvider;
 import net.ess3.nms.refl.providers.ReflSpawnerBlockProvider;
 import net.ess3.nms.refl.providers.ReflSyncCommandsProvider;
-import net.ess3.provider.BannerDataProvider;
-import net.ess3.provider.BiomeKeyProvider;
-import net.ess3.provider.ContainerProvider;
-import net.ess3.provider.DamageEventProvider;
-import net.ess3.provider.FormattedCommandAliasProvider;
 import net.ess3.provider.InventoryViewProvider;
-import net.ess3.provider.ItemUnbreakableProvider;
 import net.ess3.provider.KnownCommandsProvider;
-import net.ess3.provider.MaterialTagProvider;
-import net.ess3.provider.PersistentDataProvider;
 import net.ess3.provider.PlayerLocaleProvider;
-import net.ess3.provider.PotionMetaProvider;
 import net.ess3.provider.ProviderListener;
 import net.ess3.provider.SchedulingProvider;
 import net.ess3.provider.SerializationProvider;
 import net.ess3.provider.ServerStateProvider;
-import net.ess3.provider.SignDataProvider;
-import net.ess3.provider.SpawnEggProvider;
-import net.ess3.provider.SpawnerBlockProvider;
-import net.ess3.provider.SpawnerItemProvider;
-import net.ess3.provider.SyncCommandsProvider;
-import net.ess3.provider.WorldInfoProvider;
 import net.ess3.provider.providers.BaseBannerDataProvider;
 import net.ess3.provider.providers.BaseInventoryViewProvider;
 import net.ess3.provider.providers.BaseLoggerProvider;
@@ -112,6 +97,7 @@ import net.ess3.provider.providers.PaperMaterialTagProvider;
 import net.ess3.provider.providers.PaperRecipeBookListener;
 import net.ess3.provider.providers.PaperSerializationProvider;
 import net.ess3.provider.providers.PaperServerStateProvider;
+import net.ess3.provider.providers.PaperTickCountProvider;
 import net.ess3.provider.providers.PrehistoricPotionMetaProvider;
 import net.essentialsx.api.v2.services.BalanceTop;
 import net.essentialsx.api.v2.services.mail.MailService;
@@ -158,6 +144,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
+import java.util.MissingResourceException;
 import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
@@ -176,6 +163,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     private final transient TNTExplodeListener tntListener = new TNTExplodeListener();
     private final transient Set<String> vanishedPlayers = new LinkedHashSet<>();
     private final transient Map<String, IEssentialsCommand> commandMap = new HashMap<>();
+    private final transient ProviderFactory providerFactory = new ProviderFactory(this);
     private transient ISettings settings;
     private transient Jails jails;
     private transient Warps warps;
@@ -195,29 +183,8 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     private transient I18n i18n;
     private transient MetricsWrapper metrics;
     private transient EssentialsTimer timer;
-    private transient SpawnerItemProvider spawnerItemProvider;
-    private transient SpawnerBlockProvider spawnerBlockProvider;
-    private transient SpawnEggProvider spawnEggProvider;
-    private transient PotionMetaProvider potionMetaProvider;
-    private transient BannerDataProvider bannerDataProvider;
-    private transient ServerStateProvider serverStateProvider;
-    private transient ContainerProvider containerProvider;
-    private transient SerializationProvider serializationProvider;
-    private transient KnownCommandsProvider knownCommandsProvider;
-    private transient FormattedCommandAliasProvider formattedCommandAliasProvider;
     private transient ProviderListener recipeBookEventProvider;
-    private transient MaterialTagProvider materialTagProvider;
-    private transient SyncCommandsProvider syncCommandsProvider;
-    private transient PersistentDataProvider persistentDataProvider;
-    private transient ReflOnlineModeProvider onlineModeProvider;
-    private transient ItemUnbreakableProvider unbreakableProvider;
-    private transient WorldInfoProvider worldInfoProvider;
-    private transient PlayerLocaleProvider playerLocaleProvider;
-    private transient SignDataProvider signDataProvider;
     private transient SchedulingProvider schedulingProvider;
-    private transient DamageEventProvider damageEventProvider;
-    private transient BiomeKeyProvider biomeKeyProvider;
-    private transient InventoryViewProvider inventoryViewProvider;
     private transient Kits kits;
     private transient RandomTeleport randomTeleport;
     private transient UpdateChecker updateChecker;
@@ -365,6 +332,10 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             upgrade.convertKits();
             execTimer.mark("Kits");
 
+            randomTeleport = new RandomTeleport(this);
+            confList.add(randomTeleport);
+            execTimer.mark("Init(RandomTeleport)");
+
             upgrade.afterSettings();
             execTimer.mark("Upgrade3");
 
@@ -379,13 +350,6 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             itemDb = getItemDbFromConfig();
             confList.add(itemDb);
             execTimer.mark("Init(ItemDB)");
-
-            randomTeleport = new RandomTeleport(this);
-            if (randomTeleport.getPreCache()) {
-                randomTeleport.cacheRandomLocations(randomTeleport.getCenter(), randomTeleport.getMinRange(), randomTeleport.getMaxRange());
-            }
-            confList.add(randomTeleport);
-            execTimer.mark("Init(RandomTeleport)");
 
             customItemResolver = new CustomItemResolver(this);
             try {
@@ -408,53 +372,77 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             }
 
             EconomyLayers.onEnable(this);
+            execTimer.mark("Init(EconomyLayers)");
 
-            //Spawner item provider only uses one but it's here for legacy...
-            spawnerItemProvider = new BlockMetaSpawnerItemProvider();
+            // Spawner item provider only uses one, but it's here for legacy...
+            providerFactory.registerProvider(BlockMetaSpawnerItemProvider.class);
 
-            //Spawner block providers
-            if (VersionUtil.getServerBukkitVersion().isLowerThan(VersionUtil.v1_12_0_R01)) {
-                spawnerBlockProvider = new ReflSpawnerBlockProvider();
-            } else {
-                spawnerBlockProvider = new BukkitSpawnerBlockProvider();
-            }
+            // Spawner block providers
+            providerFactory.registerProvider(ReflSpawnerBlockProvider.class, BukkitSpawnerBlockProvider.class);
 
-            //Spawn Egg Providers
-            if (VersionUtil.getServerBukkitVersion().isLowerThan(VersionUtil.v1_9_R01)) {
-                spawnEggProvider = new LegacySpawnEggProvider();
-            } else if (VersionUtil.getServerBukkitVersion().isLowerThanOrEqualTo(VersionUtil.v1_12_2_R01)) {
-                spawnEggProvider = new ReflSpawnEggProvider();
-            } else {
-                spawnEggProvider = new FlatSpawnEggProvider();
-            }
+            // Spawn Egg Providers
+            providerFactory.registerProvider(LegacySpawnEggProvider.class, ReflSpawnEggProvider.class, FlatSpawnEggProvider.class);
 
             //Potion Meta Provider
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_20_6_R01)) {
-                potionMetaProvider = new ModernPotionMetaProvider();
-            } else if (VersionUtil.getServerBukkitVersion().isLowerThan(VersionUtil.v1_9_R01)) {
-                potionMetaProvider = new PrehistoricPotionMetaProvider();
-            } else {
-                potionMetaProvider = new LegacyPotionMetaProvider();
-            }
+            providerFactory.registerProvider(PrehistoricPotionMetaProvider.class, LegacyPotionMetaProvider.class, ModernPotionMetaProvider.class);
 
             //Banner Meta Provider
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_20_6_R01)) {
-                bannerDataProvider = new BaseBannerDataProvider();
-            } else {
-                bannerDataProvider = new LegacyBannerDataProvider();
-            }
+            providerFactory.registerProvider(LegacyBannerDataProvider.class, BaseBannerDataProvider.class);
 
-            //Server State Provider
-            //Container Provider
-            if (PaperLib.isPaper() && VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_15_2_R01)) {
-                serverStateProvider = new PaperServerStateProvider();
-                containerProvider = new PaperContainerProvider();
-                serializationProvider = new PaperSerializationProvider();
-            } else {
-                serverStateProvider = new ReflServerStateProvider();
-            }
+            // Server State Provider
+            providerFactory.registerProvider(ReflServerStateProvider.class, PaperServerStateProvider.class);
 
-            //Event Providers
+            // Container Provider
+            providerFactory.registerProvider(PaperContainerProvider.class);
+
+            // Serialization Provider
+            providerFactory.registerProvider(PaperSerializationProvider.class);
+
+            // Known Commands Provider
+            providerFactory.registerProvider(ReflKnownCommandsProvider.class, PaperKnownCommandsProvider.class);
+
+            // Command Aliases Provider
+            providerFactory.registerProvider(ReflFormattedCommandAliasProvider.class);
+
+            // Material Tag Providers
+            providerFactory.registerProvider(BukkitMaterialTagProvider.class, PaperMaterialTagProvider.class);
+
+            // Sync Commands Provider
+            providerFactory.registerProvider(ReflSyncCommandsProvider.class);
+
+            // Persistent Data Provider
+            providerFactory.registerProvider(ReflPersistentDataProvider.class, ModernPersistentDataProvider.class);
+
+            // Online Mode Provider
+            providerFactory.registerProvider(ReflOnlineModeProvider.class);
+
+            // Unbreakable Provider
+            providerFactory.registerProvider(LegacyItemUnbreakableProvider.class, ModernItemUnbreakableProvider.class);
+
+            // World Info Provider
+            providerFactory.registerProvider(FixedHeightWorldInfoProvider.class, ReflDataWorldInfoProvider.class, ModernDataWorldInfoProvider.class);
+
+            // Sign Data Provider
+            providerFactory.registerProvider(ModernSignDataProvider.class);
+
+            // Player Locale Provider
+            providerFactory.registerProvider(ModernPlayerLocaleProvider.class, LegacyPlayerLocaleProvider.class);
+
+            // Damage Event Provider
+            providerFactory.registerProvider(ModernDamageEventProvider.class, LegacyDamageEventProvider.class);
+
+            // Inventory View Provider
+            providerFactory.registerProvider(LegacyInventoryViewProvider.class, BaseInventoryViewProvider.class);
+
+            // Biome Key Provider
+            providerFactory.registerProvider(PaperBiomeKeyProvider.class);
+
+            // Tick Count Provider
+            providerFactory.registerProvider(PaperTickCountProvider.class);
+
+            providerFactory.finalizeRegistration();
+
+            // Event Providers
             if (PaperLib.isPaper()) {
                 try {
                     Class.forName("com.destroystokyo.paper.event.player.PlayerRecipeBookClickEvent");
@@ -463,74 +451,11 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
                             ((Cancellable) event).setCancelled(true);
                         }
                     });
+                    if (getSettings().isDebug()) {
+                        LOGGER.log(Level.INFO, "Registered Paper Recipe Book Event Listener");
+                    }
                 } catch (final ClassNotFoundException ignored) {
                 }
-            }
-
-            //Known Commands Provider
-            if (PaperLib.isPaper() && VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_11_2_R01)) {
-                knownCommandsProvider = new PaperKnownCommandsProvider();
-            } else {
-                knownCommandsProvider = new ReflKnownCommandsProvider();
-            }
-
-            // Command aliases provider
-            formattedCommandAliasProvider = new ReflFormattedCommandAliasProvider(PaperLib.isPaper());
-
-            // Material Tag Providers
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_13_0_R01)) {
-                materialTagProvider = PaperLib.isPaper() ? new PaperMaterialTagProvider() : new BukkitMaterialTagProvider();
-            }
-
-            // Sync Commands Provider
-            syncCommandsProvider = new ReflSyncCommandsProvider();
-
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_14_4_R01)) {
-                persistentDataProvider = new ModernPersistentDataProvider(this);
-            } else {
-                persistentDataProvider = new ReflPersistentDataProvider(this);
-            }
-
-            onlineModeProvider = new ReflOnlineModeProvider();
-
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_11_2_R01)) {
-                unbreakableProvider = new ModernItemUnbreakableProvider();
-            } else {
-                unbreakableProvider = new LegacyItemUnbreakableProvider();
-            }
-
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_17_1_R01)) {
-                worldInfoProvider = new ModernDataWorldInfoProvider();
-            } else if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_16_5_R01)) {
-                worldInfoProvider = new ReflDataWorldInfoProvider();
-            } else {
-                worldInfoProvider = new FixedHeightWorldInfoProvider();
-            }
-
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_14_4_R01)) {
-                signDataProvider = new ModernSignDataProvider(this);
-            }
-
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_12_2_R01)) {
-                playerLocaleProvider = new ModernPlayerLocaleProvider();
-            } else {
-                playerLocaleProvider = new LegacyPlayerLocaleProvider();
-            }
-
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_20_4_R01)) {
-                damageEventProvider = new ModernDamageEventProvider();
-            } else {
-                damageEventProvider = new LegacyDamageEventProvider();
-            }
-
-            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_21_R01)) {
-                inventoryViewProvider = new BaseInventoryViewProvider();
-            } else {
-                inventoryViewProvider = new LegacyInventoryViewProvider();
-            }
-
-            if (PaperLib.isPaper() && VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_19_4_R01)) {
-                biomeKeyProvider = new PaperBiomeKeyProvider();
             }
 
             execTimer.mark("Init(Providers)");
@@ -638,8 +563,13 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     }
 
     @Override
+    public ProviderFactory getProviders() {
+        return providerFactory;
+    }
+
+    @Override
     public void onDisable() {
-        final boolean stopping = getServerStateProvider().isStopping();
+        final boolean stopping = provider(ServerStateProvider.class).isStopping();
         if (!stopping) {
             LOGGER.log(Level.SEVERE, AdventureUtil.miniToLegacy(tlLiteral("serverReloading")));
         }
@@ -698,8 +628,8 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
         for (final String commandName : this.getDescription().getCommands().keySet()) {
             final Command command = this.getCommand(commandName);
             if (command != null) {
-                command.setDescription(tlLiteral(commandName + "CommandDescription"));
-                command.setUsage(tlLiteral(commandName + "CommandUsage"));
+                command.setDescription(AdventureUtil.miniToLegacy(tlLiteral(commandName + "CommandDescription")));
+                command.setUsage(AdventureUtil.miniToLegacy(tlLiteral(commandName + "CommandUsage")));
             }
         }
 
@@ -760,11 +690,9 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
 
             // Check for disabled commands
             if (getSettings().isCommandDisabled(commandLabel)) {
-                if (getKnownCommandsProvider().getKnownCommands().containsKey(commandLabel)) {
-                    final Command newCmd = getKnownCommandsProvider().getKnownCommands().get(commandLabel);
-                    if (!(newCmd instanceof PluginIdentifiableCommand) || ((PluginIdentifiableCommand) newCmd).getPlugin() != this) {
-                        return newCmd.tabComplete(cSender, commandLabel, args);
-                    }
+                final Command newCmd = provider(KnownCommandsProvider.class).getKnownCommands().get(commandLabel);
+                if (newCmd != null && (!(newCmd instanceof PluginIdentifiableCommand) || ((PluginIdentifiableCommand) newCmd).getPlugin() != this)) {
+                    return newCmd.tabComplete(cSender, commandLabel, args);
                 }
                 return Collections.emptyList();
             }
@@ -827,7 +755,8 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
                 } catch (final Exception ex) {
                     LOGGER.log(Level.SEVERE, ex.getMessage(), ex);
                     if (cSender instanceof Player) {
-                        getBukkitAudience().sender(cSender).sendMessage(AdventureUtil.miniMessage().deserialize(tlLocale(I18n.getLocale(getPlayerLocaleProvider().getLocale((Player) cSender)), "internalError")));
+                        final PlayerLocaleProvider localeProvider = provider(PlayerLocaleProvider.class);
+                        getBukkitAudience().sender(cSender).sendMessage(AdventureUtil.miniMessage().deserialize(tlLocale(I18n.getLocale(localeProvider.getLocale((Player) cSender)), "internalError")));
                     } else {
                         cSender.sendMessage(tlLiteral("internalError"));
                     }
@@ -870,11 +799,9 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
 
             // Check for disabled commands
             if (getSettings().isCommandDisabled(commandLabel)) {
-                if (getKnownCommandsProvider().getKnownCommands().containsKey(commandLabel)) {
-                    final Command newCmd = getKnownCommandsProvider().getKnownCommands().get(commandLabel);
-                    if (!(newCmd instanceof PluginIdentifiableCommand) || !isEssentialsPlugin(((PluginIdentifiableCommand) newCmd).getPlugin())) {
-                        return newCmd.execute(cSender, commandLabel, args);
-                    }
+                final Command newCmd = provider(KnownCommandsProvider.class).getKnownCommands().get(commandLabel);
+                if (newCmd != null && (!(newCmd instanceof PluginIdentifiableCommand) || !isEssentialsPlugin(((PluginIdentifiableCommand) newCmd).getPlugin()))) {
+                    return newCmd.execute(cSender, commandLabel, args);
                 }
                 sender.sendTl("commandDisabled", commandLabel);
                 return true;
@@ -918,7 +845,11 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
             } catch (final NotEnoughArgumentsException ex) {
                 if (getSettings().isVerboseCommandUsages() && !cmd.getUsageStrings().isEmpty()) {
                     sender.sendTl("commandHelpLine1", commandLabel);
-                    sender.sendTl("commandHelpLine2", command.getDescription());
+                    String description = command.getDescription();
+                    try {
+                        description = sender.tl(command.getName() + "CommandDescription");
+                    } catch (MissingResourceException ignored) {}
+                    sender.sendTl("commandHelpLine2", description);
                     sender.sendTl("commandHelpLine3");
                     for (Map.Entry<String, String> usage : cmd.getUsageStrings().entrySet()) {
                         sender.sendTl("commandHelpLineUsage", AdventureUtil.parsed(usage.getKey().replace("<command>", commandLabel)), AdventureUtil.parsed(usage.getValue()));
@@ -952,16 +883,17 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     }
 
     public void cleanupOpenInventories() {
+        final InventoryViewProvider provider = provider(InventoryViewProvider.class);
         for (final User user : getOnlineUsers()) {
             if (user.isRecipeSee()) {
                 final InventoryView view = user.getBase().getOpenInventory();
 
-                inventoryViewProvider.getTopInventory(view).clear();
-                inventoryViewProvider.close(view);
+                provider.getTopInventory(view).clear();
+                provider.close(view);
                 user.setRecipeSee(false);
             }
             if (user.isInvSee() || user.isEnderSee()) {
-                inventoryViewProvider.close(user.getBase().getOpenInventory());
+                provider.close(user.getBase().getOpenInventory());
                 user.setInvSee(false);
                 user.setEnderSee(false);
             }
@@ -1497,112 +1429,8 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     }
 
     @Override
-    public SpawnerItemProvider getSpawnerItemProvider() {
-        return spawnerItemProvider;
-    }
-
-    @Override
-    public SpawnerBlockProvider getSpawnerBlockProvider() {
-        return spawnerBlockProvider;
-    }
-
-    @Override
-    public SpawnEggProvider getSpawnEggProvider() {
-        return spawnEggProvider;
-    }
-
-    @Override
-    public PotionMetaProvider getPotionMetaProvider() {
-        return potionMetaProvider;
-    }
-
-    @Override
-    public BannerDataProvider getBannerDataProvider() {
-        return bannerDataProvider;
-    }
-
-    @Override
-    public InventoryViewProvider getInventoryViewProvider() {
-        return inventoryViewProvider;
-    }
-
-    @Override
     public CustomItemResolver getCustomItemResolver() {
         return customItemResolver;
-    }
-
-    @Override
-    public ServerStateProvider getServerStateProvider() {
-        return serverStateProvider;
-    }
-
-    public MaterialTagProvider getMaterialTagProvider() {
-        return materialTagProvider;
-    }
-
-    @Override
-    public ContainerProvider getContainerProvider() {
-        return containerProvider;
-    }
-
-    @Override
-    public KnownCommandsProvider getKnownCommandsProvider() {
-        return knownCommandsProvider;
-    }
-
-    @Override
-    public SerializationProvider getSerializationProvider() {
-        return serializationProvider;
-    }
-
-    @Override
-    public FormattedCommandAliasProvider getFormattedCommandAliasProvider() {
-        return formattedCommandAliasProvider;
-    }
-
-    @Override
-    public SyncCommandsProvider getSyncCommandsProvider() {
-        return syncCommandsProvider;
-    }
-
-    @Override
-    public PersistentDataProvider getPersistentDataProvider() {
-        return persistentDataProvider;
-    }
-
-    @Override
-    public ReflOnlineModeProvider getOnlineModeProvider() {
-        return onlineModeProvider;
-    }
-
-    @Override
-    public ItemUnbreakableProvider getItemUnbreakableProvider() {
-        return unbreakableProvider;
-    }
-
-    @Override
-    public WorldInfoProvider getWorldInfoProvider() {
-        return worldInfoProvider;
-    }
-
-    @Override
-    public PlayerLocaleProvider getPlayerLocaleProvider() {
-        return playerLocaleProvider;
-    }
-
-    @Override
-    public DamageEventProvider getDamageEventProvider() {
-        return damageEventProvider;
-    }
-
-    @Override
-    public BiomeKeyProvider getBiomeKeyProvider() {
-        return biomeKeyProvider;
-    }
-
-    @Override
-    public SignDataProvider getSignDataProvider() {
-        return signDataProvider;
     }
 
     @Override

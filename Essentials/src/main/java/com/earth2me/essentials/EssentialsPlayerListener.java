@@ -17,6 +17,10 @@ import io.papermc.lib.PaperLib;
 import net.ess3.api.IEssentials;
 import net.ess3.api.events.AfkStatusChangeEvent;
 import net.ess3.provider.CommandSendListenerProvider;
+import net.ess3.provider.FormattedCommandAliasProvider;
+import net.ess3.provider.InventoryViewProvider;
+import net.ess3.provider.KnownCommandsProvider;
+import net.ess3.provider.TickCountProvider;
 import net.ess3.provider.SchedulingProvider;
 import net.ess3.provider.providers.BukkitCommandSendListenerProvider;
 import net.ess3.provider.providers.PaperCommandSendListenerProvider;
@@ -66,7 +70,6 @@ import java.lang.management.ManagementFactory;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
@@ -300,7 +303,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
         }
         user.setLogoutLocation();
         if (user.isRecipeSee()) {
-            ess.getInventoryViewProvider().getTopInventory(user.getBase().getOpenInventory()).clear();
+            ess.provider(InventoryViewProvider.class).getTopInventory(user.getBase().getOpenInventory()).clear();
         }
 
         final ArrayList<HumanEntity> viewers = new ArrayList<>(user.getBase().getInventory().getViewers());
@@ -587,6 +590,17 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
         if (ess.getSettings().isTeleportInvulnerability()) {
             user.enableInvulnerabilityAfterTeleport();
         }
+
+        // Mitigation for https://github.com/EssentialsX/Essentials/issues/4325
+        final TickCountProvider tickCountProvider = ess.provider(TickCountProvider.class);
+        if (tickCountProvider != null && ess.getSettings().isWorldChangePreserveFlying() && VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_17_R01)) {
+            if (user.isAuthorized("essentials.fly")) {
+                //noinspection DataFlowIssue - not real
+                if (event.getFrom().getWorld() != event.getTo().getWorld() && player.isFlying()) {
+                    user.setFlightTick(tickCountProvider.getTickCount());
+                }
+            }
+        }
     }
 
     @EventHandler(priority = EventPriority.HIGH, ignoreCancelled = true)
@@ -617,10 +631,10 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
 
         // If the plugin command does not exist, check if it is an alias from commands.yml
         if (ess.getServer().getPluginCommand(cmd) == null) {
-            final Command knownCommand = ess.getKnownCommandsProvider().getKnownCommands().get(cmd);
+            final Command knownCommand = ess.provider(KnownCommandsProvider.class).getKnownCommands().get(cmd);
             if (knownCommand instanceof FormattedCommandAlias) {
                 final FormattedCommandAlias command = (FormattedCommandAlias) knownCommand;
-                for (String fullCommand : ess.getFormattedCommandAliasProvider().createCommands(command, event.getPlayer(), args.split(" "))) {
+                for (String fullCommand : ess.provider(FormattedCommandAliasProvider.class).createCommands(command, event.getPlayer(), args.split(" "))) {
                     handlePlayerCommandPreprocess(event, fullCommand);
                 }
                 return;
@@ -706,21 +720,17 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
             // If so, no need to check for (and write) new ones.
             boolean cooldownFound = false;
 
-            // Iterate over a copy of getCommandCooldowns in case of concurrent modifications
-            for (final Entry<Pattern, Long> entry : new HashMap<>(user.getCommandCooldowns()).entrySet()) {
+            for (final Entry<Pattern, Long> entry : user.getCommandCooldowns().entrySet()) {
                 // Remove any expired cooldowns
                 if (entry.getValue() <= System.currentTimeMillis()) {
                     user.clearCommandCooldown(entry.getKey());
                     // Don't break in case there are other command cooldowns left to clear.
                 } else if (entry.getKey().matcher(fullCommand).matches()) {
                     // User's current cooldown hasn't expired, inform and terminate cooldown code.
-                    if (entry.getValue() > System.currentTimeMillis()) {
-                        final String commandCooldownTime = DateUtil.formatDateDiff(entry.getValue());
-                        user.sendTl("commandCooldown", commandCooldownTime);
-                        cooldownFound = true;
-                        event.setCancelled(true);
-                        break;
-                    }
+                    final String commandCooldownTime = DateUtil.formatDateDiff(entry.getValue());
+                    user.sendTl("commandCooldown", commandCooldownTime);
+                    cooldownFound = true;
+                    event.setCancelled(true);
                 }
             }
 
@@ -744,8 +754,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
 
         if (ess.getSettings().isWorldChangeFlyResetEnabled()) {
             if (user.getBase().getGameMode() != GameMode.CREATIVE
-                // COMPAT: String compare for 1.7.10
-                && !user.getBase().getGameMode().name().equals("SPECTATOR")
+                && user.getBase().getGameMode() != GameMode.SPECTATOR
                 && !user.isAuthorized("essentials.fly")) {
                 user.getBase().setFallDistance(0f);
                 user.getBase().setAllowFlight(false);
@@ -768,6 +777,13 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
                 }
             }
         }
+
+        final TickCountProvider tickCountProvider = ess.provider(TickCountProvider.class);
+        if (tickCountProvider != null && user.getFlightTick() == tickCountProvider.getTickCount()) {
+            user.getBase().setAllowFlight(true);
+            user.getBase().setFlying(true);
+        }
+        user.setFlightTick(-1);
     }
 
     @EventHandler(priority = EventPriority.MONITOR)
@@ -898,14 +914,15 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
     @EventHandler(priority = EventPriority.LOWEST, ignoreCancelled = true)
     public void onInventoryClickEvent(final InventoryClickEvent event) {
         Player refreshPlayer = null;
-        final Inventory top = ess.getInventoryViewProvider().getTopInventory(event.getView());
+        final InventoryViewProvider provider = ess.provider(InventoryViewProvider.class);
+        final Inventory top = provider.getTopInventory(event.getView());
         final InventoryType type = top.getType();
 
         final Inventory clickedInventory;
         if (event.getRawSlot() < 0) {
             clickedInventory = null;
         } else {
-            clickedInventory = event.getRawSlot() < top.getSize() ? top : ess.getInventoryViewProvider().getBottomInventory(event.getView());
+            clickedInventory = event.getRawSlot() < top.getSize() ? top : provider.getBottomInventory(event.getView());
         }
 
         final User user = ess.getUser((Player) event.getWhoClicked());
@@ -964,7 +981,8 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
     @EventHandler(priority = EventPriority.MONITOR)
     public void onInventoryCloseEvent(final InventoryCloseEvent event) {
         Player refreshPlayer = null;
-        final Inventory top = ess.getInventoryViewProvider().getTopInventory(event.getView());
+        final InventoryViewProvider provider = ess.provider(InventoryViewProvider.class);
+        final Inventory top = provider.getTopInventory(event.getView());
         final InventoryType type = top.getType();
         if (type == InventoryType.PLAYER) {
             final User user = ess.getUser((Player) event.getPlayer());
@@ -978,7 +996,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
             final User user = ess.getUser((Player) event.getPlayer());
             if (user.isRecipeSee()) {
                 user.setRecipeSee(false);
-                ess.getInventoryViewProvider().getTopInventory(event.getView()).clear();
+                provider.getTopInventory(event.getView()).clear();
                 refreshPlayer = user.getBase();
             }
         } else if (type == InventoryType.CHEST && top.getSize() == 9) {

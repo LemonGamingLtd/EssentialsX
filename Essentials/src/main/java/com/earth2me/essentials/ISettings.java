@@ -3,6 +3,7 @@ package com.earth2me.essentials;
 import com.earth2me.essentials.commands.IEssentialsCommand;
 import com.earth2me.essentials.signs.EssentialsSign;
 import com.earth2me.essentials.textreader.IText;
+import net.essentialsx.api.v2.ChatType;
 import net.kyori.adventure.text.minimessage.tag.Tag;
 import org.bukkit.Material;
 import org.bukkit.World;
@@ -37,6 +38,8 @@ public interface ISettings extends IConf {
     boolean isAlwaysRunBackup();
 
     String getChatFormat(String group);
+
+    String getChatFormat(String group, ChatType chatType);
 
     String getWorldAlias(String world);
 
@@ -103,11 +106,17 @@ public interface ISettings extends IConf {
 
     List<Material> getProtectList(final String configName);
 
+    List<String> getProtectListRaw(final String configName);
+
     boolean getProtectPreventSpawn(final String creatureName);
 
     String getProtectString(final String configName);
 
     boolean getRespawnAtHome();
+
+    String getRandomSpawnLocation();
+
+    String getRandomRespawnLocation();
 
     boolean isRespawnAtAnchor();
 
@@ -342,6 +351,8 @@ public interface ISettings extends IConf {
 
     boolean isWorldChangeFlyResetEnabled();
 
+    boolean isWorldChangePreserveFlying();
+
     boolean isWorldChangeSpeedResetEnabled();
 
     long getCommandCooldownMs(String label);
@@ -416,11 +427,17 @@ public interface ISettings extends IConf {
 
     boolean showZeroBaltop();
 
+    BigDecimal getMultiplier(final User user);
+
     int getMaxItemLore();
 
     Tag getPrimaryColor();
 
     Tag getSecondaryColor();
+
+    BigDecimal getBaltopMinBalance();
+
+    long getBaltopMinPlaytime();
 
     enum KeepInvPolicy {
         KEEP,
