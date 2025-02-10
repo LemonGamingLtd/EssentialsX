@@ -1,6 +1,8 @@
 package com.earth2me.essentials.utils;
 
 import net.ess3.api.IUser;
+import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 
@@ -28,6 +30,16 @@ public final class FormatUtil {
     //Used to strip ANSI control codes from console
     private static final Pattern ANSI_CONTROL_PATTERN = Pattern.compile("[\\x1B\\x9B][\\[\\]()#;?]*(?:(?:(?:;[-a-zA-Z\\d/#&.:=?%@~_]+)*|[a-zA-Z\\d]+(?:;[-a-zA-Z\\d/#&.:=?%@~_]*)*)?\\x07|(?:\\d{1,4}(?:;\\d{0,4})*)?[\\dA-PR-TZcf-nq-uy=><~])");
     private static final Pattern PAPER_CONTROL_PATTERN = Pattern.compile("(?i)" + (char) 0x7f + "[0-9A-FK-ORX]");
+
+    //MINIMESSAGE KYORI FORMATTERS
+    private static final LegacyComponentSerializer LEGACY_AMPERSAND = LegacyComponentSerializer.legacyAmpersand();
+    private static final LegacyComponentSerializer LEGACY_AMPERSAND_HEX = LEGACY_AMPERSAND.toBuilder().hexColors().build();
+
+    private static final LegacyComponentSerializer LEGACY_SECTION = LegacyComponentSerializer.legacySection();
+    private static final LegacyComponentSerializer LEGACY_SECTION_HEX = LEGACY_SECTION.toBuilder().hexColors().build();
+
+    private static final MiniMessage MINI_MESSAGE_LENIENT = MiniMessage.builder().strict(false).build();
+    //
 
     private FormatUtil() {
     }
@@ -89,7 +101,9 @@ public final class FormatUtil {
         return replaceColor(input, EnumSet.allOf(ChatColor.class), true);
     }
 
-    static String replaceColor(final String input, final Set<ChatColor> supported, final boolean rgb) {
+    static String replaceColor(String input, final Set<ChatColor> supported, final boolean rgb) {
+        input = LEGACY_AMPERSAND_HEX.serialize(MINI_MESSAGE_LENIENT.deserialize(input)); // yikes
+
         final StringBuffer legacyBuilder = new StringBuffer();
         final Matcher legacyMatcher = REPLACE_ALL_PATTERN.matcher(input);
         legacyLoop:
