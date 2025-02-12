@@ -98,11 +98,14 @@ public final class FormatUtil {
         if (input == null) {
             return null;
         }
-        return replaceColor(input, EnumSet.allOf(ChatColor.class), true);
+        return replaceColor(input, EnumSet.allOf(ChatColor.class), true, true);
     }
 
-    static String replaceColor(String input, final Set<ChatColor> supported, final boolean rgb) {
-        input = LEGACY_AMPERSAND_HEX.serialize(MINI_MESSAGE_LENIENT.deserialize(input)); // yikes
+    static String replaceColor(String input, final Set<ChatColor> supported, final boolean rgb, boolean miniMessage) {
+        if (miniMessage) {
+            input = input.replaceAll(STRIP_ALL_PATTERN.pattern(), "&$1");
+            input = LEGACY_AMPERSAND_HEX.serialize(MINI_MESSAGE_LENIENT.deserialize(input)); // yikes
+        }
 
         final StringBuffer legacyBuilder = new StringBuffer();
         final Matcher legacyMatcher = REPLACE_ALL_PATTERN.matcher(input);
@@ -251,7 +254,7 @@ public final class FormatUtil {
             message = stripColor(message, strip);
         }
         if (!supported.isEmpty() || rgb) {
-            message = replaceColor(message, supported, rgb);
+            message = replaceColor(message, supported, rgb, false);
         }
         return message;
     }
