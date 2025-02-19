@@ -3,7 +3,9 @@ package net.ess3.provider.providers;
 import io.papermc.paper.threadedregions.RegionizedServerInitEvent;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.ess3.provider.SchedulingProvider;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
@@ -79,6 +81,11 @@ public class FoliaSchedulingProvider implements SchedulingProvider, Listener {
     @Override
     public void runLocationalTask(Location location, Runnable runnable) {
         plugin.getServer().getRegionScheduler().execute(plugin, location, runnable);
+    }
+
+    @Override
+    public void runLocationalTask(World world, int chunkX, int chunkY, Runnable runnable) {
+        plugin.getServer().getRegionScheduler().execute(plugin, world, chunkX, chunkY, runnable);
     }
 
     @Override

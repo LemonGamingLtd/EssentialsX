@@ -1,6 +1,8 @@
 package net.ess3.provider;
 
+import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 
 public interface SchedulingProvider extends Provider {
@@ -19,6 +21,8 @@ public interface SchedulingProvider extends Provider {
     EssentialsTask runEntityTaskRepeating(Entity entity, Runnable runnable, long delay, long period);
 
     void runLocationalTask(Location location, Runnable runnable);
+
+    void runLocationalTask(World world, int chunkX, int chunkY, Runnable runnable);
 
     void runLocationalTask(Location location, Runnable runnable, long delay);
 
