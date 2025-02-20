@@ -102,7 +102,10 @@ import net.essentialsx.api.v2.services.BalanceTop;
 import net.essentialsx.api.v2.services.mail.MailService;
 import net.kyori.adventure.platform.bukkit.BukkitAudiences;
 import net.kyori.adventure.text.Component;
-import org.bukkit.*;
+import org.bukkit.Bukkit;
+import org.bukkit.Location;
+import org.bukkit.Server;
+import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.command.BlockCommandSender;
 import org.bukkit.command.Command;
@@ -1149,7 +1152,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
         final Collection<Player> players = getOnlinePlayers();
         for (final Player player : players) {
             final User user = getUser(player);
-            if ((permission == null && (sender == null || !user.isIgnoredPlayer(sender))) || (permission != null && user.isAuthorized(permission))) {
+            if (permission == null && (sender == null || !user.isIgnoredPlayer(sender)) || permission != null && user.isAuthorized(permission)) {
                 if (shouldExclude != null && shouldExclude.test(user)) {
                     continue;
                 }
