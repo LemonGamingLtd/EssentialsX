@@ -56,7 +56,7 @@ public class Commandweather extends EssentialsCommand {
             throw new TranslatableException("weatherInvalidWorld", args[0]);
         }
 
-        ess.scheduleLocationDelayedTask(world.getSpawnLocation(), () -> {
+        ess.scheduleGlobalDelayedTask(() -> {
             if (args.length > 2) {
                 world.setStorm(isStorm);
                 world.setWeatherDuration(Integer.parseInt(args[2]) * 20);

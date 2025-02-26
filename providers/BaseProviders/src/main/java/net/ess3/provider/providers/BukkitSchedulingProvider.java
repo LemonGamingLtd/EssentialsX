@@ -2,7 +2,9 @@ package net.ess3.provider.providers;
 
 import net.ess3.provider.SchedulingProvider;
 import org.bukkit.Bukkit;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
+import org.bukkit.World;
 import org.bukkit.entity.Entity;
 import org.bukkit.plugin.Plugin;
 import org.bukkit.scheduler.BukkitTask;
@@ -51,6 +53,11 @@ public class BukkitSchedulingProvider implements SchedulingProvider {
 
     @Override
     public void runLocationalTask(Location location, Runnable runnable) {
+        runGlobalLocationalTask(runnable, 1);
+    }
+
+    @Override
+    public void runLocationalTask(World world, int chunkX, int chunkY, Runnable runnable) {
         runGlobalLocationalTask(runnable, 1);
     }
 

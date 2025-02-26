@@ -12,6 +12,7 @@ import net.ess3.provider.Provider;
 import net.ess3.provider.SchedulingProvider;
 import net.essentialsx.api.v2.services.BalanceTop;
 import net.essentialsx.api.v2.services.mail.MailService;
+import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;
@@ -109,6 +110,8 @@ public interface IEssentials extends Plugin {
     void scheduleLocationDelayedTask(Location location, Runnable run);
 
     void scheduleLocationDelayedTask(Location location, Runnable run, long delay);
+
+    void scheduleLocationDelayedTask(World world, int chunkX, int chunkY, Runnable run);
 
     SchedulingProvider.EssentialsTask scheduleLocationRepeatingTask(Location location, Runnable run, long delay, long period);
 

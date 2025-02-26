@@ -1152,7 +1152,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
         final Collection<Player> players = getOnlinePlayers();
         for (final Player player : players) {
             final User user = getUser(player);
-            if ((permission == null && (sender == null || !user.isIgnoredPlayer(sender))) || (permission != null && user.isAuthorized(permission))) {
+            if (permission == null && (sender == null || !user.isIgnoredPlayer(sender)) || permission != null && user.isAuthorized(permission)) {
                 if (shouldExclude != null && shouldExclude.test(user)) {
                     continue;
                 }
@@ -1257,6 +1257,11 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     @Override
     public void scheduleLocationDelayedTask(Location location, Runnable run, long delay) {
         schedulingProvider.runLocationalTask(location, run, delay);
+    }
+
+    @Override
+    public void scheduleLocationDelayedTask(World world, int chunkX, int chunkY, Runnable run) {
+        schedulingProvider.runLocationalTask(world, chunkX, chunkY, run);
     }
 
     @Override

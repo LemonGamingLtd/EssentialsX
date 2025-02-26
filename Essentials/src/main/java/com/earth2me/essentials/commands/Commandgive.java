@@ -86,7 +86,8 @@ public class Commandgive extends EssentialsLoopCommand {
             for (final ItemStack item : leftovers.values()) {
                 if (isDropItemsIfFull) {
                     final World w = player.getWorld();
-                    w.dropItemNaturally(player.getLocation(), item);
+                    ess.scheduleLocationDelayedTask(player.getLocation(),
+                            () -> w.dropItemNaturally(player.getLocation(), item));
                 } else {
                     sender.sendTl("giveSpawnFailure", item.getAmount(), itemName, player.getDisplayName());
                 }
