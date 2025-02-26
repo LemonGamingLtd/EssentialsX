@@ -12,7 +12,6 @@ import net.ess3.provider.Provider;
 import net.ess3.provider.SchedulingProvider;
 import net.essentialsx.api.v2.services.BalanceTop;
 import net.essentialsx.api.v2.services.mail.MailService;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.World;

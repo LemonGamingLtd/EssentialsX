@@ -48,12 +48,12 @@ public class Commandgc extends EssentialsCommand {
                     break;
             }
 
-            AtomicInteger tileEntities = new AtomicInteger();
+            final AtomicInteger tileEntities = new AtomicInteger();
 
             try {
                 for (final Chunk chunk : w.getLoadedChunks()) {
                     this.ess.scheduleLocationDelayedTask(chunk.getWorld(), chunk.getX(), chunk.getZ(),
-                            () -> tileEntities.addAndGet(chunk.getTileEntities().length));
+                        () -> tileEntities.addAndGet(chunk.getTileEntities().length));
                 }
             } catch (final java.lang.ClassCastException ex) {
                 ess.getLogger().log(Level.SEVERE, "Corrupted chunk data on world " + w, ex);

@@ -6,7 +6,6 @@ import com.earth2me.essentials.Trade;
 import com.earth2me.essentials.User;
 import net.ess3.api.TranslatableException;
 import net.ess3.api.events.UserRandomTeleportEvent;
-import net.ess3.provider.SchedulingProvider;
 import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.event.player.PlayerTeleportEvent;
@@ -33,26 +32,26 @@ public class Commandtpr extends EssentialsCommand {
         if (randomTeleport.isPerLocationPermission() && !user.isAuthorized("essentials.tpr.location." + name)) {
             throw new TranslatableException("warpUsePermission");
         }
-		final Location worldCenter = ess.getServer().getWorlds().get(0).getWorldBorder().getCenter();
-		int chunkX = worldCenter.getBlockX() >> 4;
-		int chunkZ = worldCenter.getBlockZ() >> 4;
+        final Location worldCenter = ess.getServer().getWorlds().get(0).getWorldBorder().getCenter();
+        final int chunkX = worldCenter.getBlockX() >> 4;
+        final int chunkZ = worldCenter.getBlockZ() >> 4;
 
-		this.ess.scheduleLocationDelayedTask(worldCenter, () -> {
+        this.ess.scheduleLocationDelayedTask(worldCenter, () -> {
             final UserRandomTeleportEvent event = new UserRandomTeleportEvent(userToTeleport, name, randomTeleport.getCenter(name), randomTeleport.getMinRange(name), randomTeleport.getMaxRange(name));
             server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return;
             }
-                (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(name))
-                    .thenAccept(location -> {
-                        final CompletableFuture<Boolean> future = getNewExceptionFuture(user.getSource(), commandLabel);
-                        future.thenAccept(success -> {
-                            if (success) {
-                                userToTeleport.sendTl("tprSuccess");
-                            }
-                        });
-                        userToTeleport.getAsyncTeleport().teleport(location, charge, PlayerTeleportEvent.TeleportCause.COMMAND, future);
+            (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(name))
+                .thenAccept(location -> {
+                    final CompletableFuture<Boolean> future = getNewExceptionFuture(user.getSource(), commandLabel);
+                    future.thenAccept(success -> {
+                        if (success) {
+                            userToTeleport.sendTl("tprSuccess");
+                        }
                     });
+                    userToTeleport.getAsyncTeleport().teleport(location, charge, PlayerTeleportEvent.TeleportCause.COMMAND, future);
+                });
         });
 
         throw new NoChargeException();
@@ -67,27 +66,27 @@ public class Commandtpr extends EssentialsCommand {
         final User userToTeleport = getPlayer(server, sender, args, 1);
         final String name = args[0];
 
-		final Location worldCenter = ess.getServer().getWorlds().get(0).getWorldBorder().getCenter();
-		int chunkX = worldCenter.getBlockX() >> 4;
-		int chunkZ = worldCenter.getBlockZ() >> 4;
+        final Location worldCenter = ess.getServer().getWorlds().get(0).getWorldBorder().getCenter();
+        final int chunkX = worldCenter.getBlockX() >> 4;
+        final int chunkZ = worldCenter.getBlockZ() >> 4;
 
-		this.ess.scheduleLocationDelayedTask(worldCenter, () -> {
-		    final UserRandomTeleportEvent event = new UserRandomTeleportEvent(userToTeleport, name, randomTeleport.getCenter(name), randomTeleport.getMinRange(name), randomTeleport.getMaxRange(name));
-		    server.getPluginManager().callEvent(event);
-		    if (event.isCancelled()) {
-		        return;
-		    }
-		    (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(name))
-		        .thenAccept(location -> {
-		            final CompletableFuture<Boolean> future = getNewExceptionFuture(sender, commandLabel);
-		            future.thenAccept(success -> {
-		                if (success) {
-		                	userToTeleport.sendTl("tprSuccess");
-		                }
-		            });
-		            userToTeleport.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.COMMAND, future);
-		        });
-		});
+        this.ess.scheduleLocationDelayedTask(worldCenter, () -> {
+            final UserRandomTeleportEvent event = new UserRandomTeleportEvent(userToTeleport, name, randomTeleport.getCenter(name), randomTeleport.getMinRange(name), randomTeleport.getMaxRange(name));
+            server.getPluginManager().callEvent(event);
+            if (event.isCancelled()) {
+                return;
+            }
+            (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(name))
+                .thenAccept(location -> {
+                    final CompletableFuture<Boolean> future = getNewExceptionFuture(sender, commandLabel);
+                    future.thenAccept(success -> {
+                        if (success) {
+                            userToTeleport.sendTl("tprSuccess");
+                        }
+                    });
+                    userToTeleport.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.COMMAND, future);
+                });
+        });
     }
 
     @Override

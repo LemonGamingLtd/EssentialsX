@@ -108,7 +108,7 @@ public class Commandremove extends EssentialsCommand {
     }
 
     private void removeHandler(final CommandSource sender, final List<String> types, final List<String> customTypes, final World world, int radius) {
-        AtomicInteger removed = new AtomicInteger();
+        final AtomicInteger removed = new AtomicInteger();
         if (radius > 0) {
             radius *= radius;
         }
@@ -135,9 +135,9 @@ public class Commandremove extends EssentialsCommand {
             sender.sendTl("invalidMob");
         }
 
-        int finalRadius = radius;
+        final int finalRadius = radius;
         this.ess.runTaskAsynchronously(() -> {
-            CountDownLatch latch = new CountDownLatch(world.getLoadedChunks().length);
+            final CountDownLatch latch = new CountDownLatch(world.getLoadedChunks().length);
             for (final Chunk chunk : world.getLoadedChunks()) {
                 this.ess.scheduleLocationDelayedTask(chunk.getWorld(), chunk.getX(), chunk.getZ(), () -> {
                     try {
@@ -271,12 +271,12 @@ public class Commandremove extends EssentialsCommand {
                     }
                 });
             }
-			try {
-				latch.await();
-			} catch (InterruptedException e) {
-				throw new RuntimeException(e);
-			}
-			sender.sendTl("removed", removed.get());
+            try {
+                latch.await();
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            sender.sendTl("removed", removed.get());
         });
     }
 

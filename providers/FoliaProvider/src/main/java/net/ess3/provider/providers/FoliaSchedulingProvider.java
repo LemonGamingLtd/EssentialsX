@@ -3,7 +3,6 @@ package net.ess3.provider.providers;
 import io.papermc.paper.threadedregions.RegionizedServerInitEvent;
 import io.papermc.paper.threadedregions.scheduler.ScheduledTask;
 import net.ess3.provider.SchedulingProvider;
-import org.bukkit.Chunk;
 import org.bukkit.Location;
 import org.bukkit.World;
 import org.bukkit.entity.Entity;
