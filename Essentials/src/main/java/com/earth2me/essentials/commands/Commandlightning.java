@@ -3,6 +3,7 @@ package com.earth2me.essentials.commands;
 import com.earth2me.essentials.CommandSource;
 import com.earth2me.essentials.User;
 import com.google.common.collect.Lists;
+import org.bukkit.Location;
 import org.bukkit.Server;
 import org.bukkit.entity.LightningStrike;
 
@@ -18,7 +19,12 @@ public class Commandlightning extends EssentialsLoopCommand {
     public void run(final Server server, final CommandSource sender, final String commandLabel, final String[] args) throws Exception {
         if (args.length == 0 || !sender.isAuthorized("essentials.lightning.others")) {
             if (sender.isPlayer()) {
-                sender.getPlayer().getWorld().strikeLightning(sender.getUser().getTargetBlock(600).getLocation());
+                final Location targetLocation = sender.getUser().getTargetBlock(600).getLocation();
+                if (sender.isAuthorized("essentials.lightning.others.damage")) {
+                    sender.getPlayer().getWorld().strikeLightning(targetLocation);
+                } else {
+                    sender.getPlayer().getWorld().strikeLightningEffect(targetLocation);
+                }
                 return;
             }
             throw new NotEnoughArgumentsException();
