@@ -43,7 +43,7 @@ public class Commandlightning extends EssentialsLoopCommand {
                 sender.sendTl("lightningUse", player.getDisplayName());
                 final LightningStrike strike = player.getBase().getWorld().strikeLightningEffect(player.getBase().getLocation());
 
-                if (!player.isGodModeEnabled()) {
+                if (!player.isGodModeEnabled() && sender.isAuthorized("essentials.lightning.others.damage")) {
                     player.getBase().damage(finalPower, strike);
                 }
                 if (ess.getSettings().warnOnSmite()) {
