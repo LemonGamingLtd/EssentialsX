@@ -137,6 +137,10 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
     @Override
     public boolean isAuthorized(final String node) {
+        if (Essentials.TESTING) {
+            return false;
+        }
+
         final boolean result = isAuthorizedCheck(node);
         if (ess.getSettings().isDebug()) {
             ess.getLogger().log(Level.INFO, "checking if " + base.getName() + " has " + node + " - " + result);
@@ -146,6 +150,10 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
 
     @Override
     public boolean isPermissionSet(final String node) {
+        if (Essentials.TESTING) {
+            return false;
+        }
+
         final boolean result = isPermSetCheck(node);
         if (ess.getSettings().isDebug()) {
             ess.getLogger().log(Level.INFO, "checking if " + base.getName() + " has " + node + " (set-explicit) - " + result);
