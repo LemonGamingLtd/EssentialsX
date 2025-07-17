@@ -58,12 +58,14 @@ public class Commandtpr extends EssentialsCommand {
             if (event.isCancelled()) {
                 return;
             }
-    target.sendTl("tprSuccess");
-        if (target != user) {
-            user.sendTl("tprOtherUser", target.getDisplayName());
-        }
 
-        (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(randomLocationName))
+            target.sendTl("tprSuccess");
+
+            if (target != user) {
+                user.sendTl("tprOtherUser", target.getDisplayName());
+            }
+
+            (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(randomLocationName))
                 .thenAccept(location -> {
                     final CompletableFuture<Boolean> future = getNewExceptionFuture(user.getSource(), commandLabel);
                     future.thenAccept(success -> {
@@ -92,18 +94,15 @@ public class Commandtpr extends EssentialsCommand {
         }
 
         final Location worldCenter = ess.getServer().getWorlds().get(0).getWorldBorder().getCenter();
-        final int chunkX = worldCenter.getBlockX() >> 4;
-        final int chunkZ = worldCenter.getBlockZ() >> 4;
-
         this.ess.scheduleLocationDelayedTask(worldCenter, () -> {
             final UserRandomTeleportEvent event = new UserRandomTeleportEvent(userToTeleport, potentialLocation, randomTeleport.getCenter(potentialLocation), randomTeleport.getMinRange(potentialLocation), randomTeleport.getMaxRange(potentialLocation));
             server.getPluginManager().callEvent(event);
             if (event.isCancelled()) {
                 return;
             }
-    userToTeleport.sendTl("tprSuccess");
-        sender.sendTl("tprOtherUser", userToTeleport.getDisplayName());
-        (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(potentialLocation))
+            userToTeleport.sendTl("tprSuccess");
+            sender.sendTl("tprOtherUser", userToTeleport.getDisplayName());
+            (event.isModified() ? randomTeleport.getRandomLocation(event.getCenter(), event.getMinRange(), event.getMaxRange()) : randomTeleport.getRandomLocation(potentialLocation))
                 .thenAccept(location -> {
                     final CompletableFuture<Boolean> future = getNewExceptionFuture(sender, commandLabel);
                     future.thenAccept(success -> {
