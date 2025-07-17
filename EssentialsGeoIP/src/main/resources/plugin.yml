@@ -1,4 +1,3 @@
-# This determines the command prefix when there are conflicts (/name:home, /name:help, etc.)
 name: EssentialsGeoIP
 main: com.earth2me.essentials.geoip.EssentialsGeoIP
 # Note to developers: This next line cannot change, or the automatic versioning system will break.
@@ -9,3 +8,8 @@ authors: [Zenexer, ementalo, Aelux, Brettflan, KimKandor, snowleo, ceulemans, Xe
 depend: [Essentials]
 api-version: 1.13
 folia-supported: true
+permissions:
+  essentials.geoip.show:
+    description: Shows the country or city of a user on login and /whois.
+  essentials.geoip.hide:
+    description: Hides the bearer of this permission from users with essentials.geoip.show
