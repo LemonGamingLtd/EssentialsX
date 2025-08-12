@@ -363,7 +363,7 @@ public class JDADiscordService implements DiscordService, IEssentialsModule {
     }
 
     public void updateTypesRelay() {
-        if (!getSettings().isShowAvatar() && !getSettings().isShowName() && !getSettings().isShowDisplayName()) {
+        if (!getSettings().isShowAvatar() && !getSettings().isCustomBotName()) {
             for (WrappedWebhookClient webhook : channelIdToWebhook.values()) {
                 webhook.close();
             }
