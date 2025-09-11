@@ -283,6 +283,10 @@ public interface ISettings extends IConf {
 
     double getMaxWalkSpeed();
 
+    float getMaxUserFlySpeed();
+
+    float getMaxUserWalkSpeed();
+
     int getMailsPerMinute();
 
     long getEconomyLagWarning();

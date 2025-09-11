@@ -1543,6 +1543,18 @@ public class Settings implements net.ess3.api.ISettings {
         return maxSpeed > 1.0 ? 1.0 : Math.abs(maxSpeed);
     }
 
+    @Override
+    public float getMaxUserFlySpeed() {
+        final float maxSpeed = config.getFloat("max-user-fly-speed", 2);
+        return maxSpeed > 10f ? 10f : Math.abs(maxSpeed);
+    }
+
+    @Override
+    public float getMaxUserWalkSpeed() {
+        final float maxSpeed = config.getFloat("max-user-walk-speed", 2);
+        return maxSpeed > 10f ? 10f : Math.abs(maxSpeed);
+    }
+
     private int _getMailsPerMinute() {
         return config.getInt("mails-per-minute", 1000);
     }

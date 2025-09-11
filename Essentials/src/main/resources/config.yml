@@ -657,6 +657,10 @@ login-attack-delay: 5
 max-walk-speed: 0.8
 max-fly-speed: 0.8
 
+# Set the max user walk and fly speeds to any value up to 10.
+max-user-walk-speed: 2
+max-user-fly-speed: 2
+
 # Set the maximum amount of mail that can be sent within a minute.
 mails-per-minute: 1000
 

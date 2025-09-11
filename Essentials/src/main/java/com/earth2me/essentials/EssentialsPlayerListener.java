@@ -1075,7 +1075,7 @@ public class EssentialsPlayerListener implements Listener, FakeAccessor {
         final Player player = event.getPlayer();
         if (player.isFlying() && player.getAllowFlight() && user.isAuthorized("essentials.fly")) {
             // The gamemode change happens after the event, so we need to delay the flight enable
-            ess.scheduleSyncDelayedTask(() -> {
+            ess.scheduleEntityDelayedTask(player, () -> {
                 player.setAllowFlight(true);
                 player.setFlying(true);
             }, 1);

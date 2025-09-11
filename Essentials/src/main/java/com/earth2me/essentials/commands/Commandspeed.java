@@ -24,7 +24,8 @@ public class Commandspeed extends EssentialsCommand {
         if (args.length < 2) {
             throw new NotEnoughArgumentsException();
         }
-        speedOtherPlayers(server, sender, isFlyMode(args[0]), true, getMoveSpeed(args[1]), args[2]);
+        final boolean isFly = isFlyMode(args[0]);
+        speedOtherPlayers(server, sender, isFly, true, getMoveSpeed(args[1], isFly, true), args[2]);
     }
 
     @Override
@@ -38,10 +39,10 @@ public class Commandspeed extends EssentialsCommand {
         final boolean isBypass = user.isAuthorized("essentials.speed.bypass");
         if (args.length == 1) {
             isFly = flyPermCheck(user, user.getBase().isFlying());
-            speed = getMoveSpeed(args[0]);
+            speed = getMoveSpeed(args[0], isFly, isBypass);
         } else {
             isFly = flyPermCheck(user, isFlyMode(args[0]));
-            speed = getMoveSpeed(args[1]);
+            speed = getMoveSpeed(args[1], isFly, isBypass);
             if (args.length > 2 && user.isAuthorized("essentials.speed.others")) {
                 if (args[2].trim().length() < 2) {
                     throw new PlayerNotFoundException();
@@ -103,12 +104,16 @@ public class Commandspeed extends EssentialsCommand {
         return isFlyMode;
     }
 
-    private float getMoveSpeed(final String moveSpeed) throws NotEnoughArgumentsException {
+    private float getMoveSpeed(final String moveSpeed, final boolean isFly, final boolean isBypass) throws NotEnoughArgumentsException {
         float userSpeed;
         try {
             userSpeed = FloatUtil.parseFloat(moveSpeed);
-            if (userSpeed > 10f) {
-                userSpeed = 10f;
+            if (isBypass) {
+                return userSpeed;
+            }
+            final float maxSpeed = isFly ? ess.getSettings().getMaxUserFlySpeed() : ess.getSettings().getMaxUserWalkSpeed();
+            if (userSpeed > maxSpeed) {
+                userSpeed = maxSpeed;
             } else if (userSpeed < 0.0001f) {
                 userSpeed = 0.0001f;
             }
