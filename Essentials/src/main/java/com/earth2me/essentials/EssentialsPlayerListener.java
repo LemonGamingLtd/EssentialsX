@@ -507,7 +507,7 @@ public class EssentialsPlayerListener implements Listener {
 
         if (user.isAuthorized("essentials.fly.safelogin")) {
             user.getBase().setFallDistance(0);
-            if (LocationUtil.shouldFly(ess, player.getLocation())) {
+            if (LocationUtil.shouldFly(ess, user.getLocation())) {
                 user.getBase().setAllowFlight(true);
                 user.getBase().setFlying(true);
                 if (ess.getSettings().isSendFlyEnableOnJoin()) {
@@ -583,7 +583,7 @@ public class EssentialsPlayerListener implements Listener {
         dUser.updateActivity(false, AfkStatusChangeEvent.Cause.JOIN);
         dUser.stopTransaction();
 
-        ess.scheduleSyncDelayedTask(() -> {
+        ess.scheduleEntityDelayedTask(player, () -> {
             final User user = ess.getUser(player);
 
             if (!user.getBase().isOnline()) {
