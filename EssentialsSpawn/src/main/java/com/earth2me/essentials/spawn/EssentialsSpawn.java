@@ -8,8 +8,8 @@ import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
 import org.bukkit.event.EventPriority;
+import org.bukkit.event.inventory.InventoryCloseEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.plugin.PluginManager;
 import org.bukkit.plugin.java.JavaPlugin;
 
@@ -43,8 +43,8 @@ public class EssentialsSpawn extends JavaPlugin implements IEssentialsSpawn {
 
         final EventPriority respawnPriority = ess.getSettings().getRespawnPriority();
         if (respawnPriority != null) {
-            pluginManager.registerEvent(PlayerRespawnEvent.class, playerListener, respawnPriority, (ll, event) ->
-                ((EssentialsSpawnPlayerListener) ll).onPlayerRespawn((PlayerRespawnEvent) event), this);
+            pluginManager.registerEvent(InventoryCloseEvent.class, playerListener, respawnPriority, (ll, event) ->
+                ((EssentialsSpawnPlayerListener) ll).onPlayerRespawn((InventoryCloseEvent) event), this);
         }
 
         final EventPriority joinPriority = ess.getSettings().getSpawnJoinPriority();

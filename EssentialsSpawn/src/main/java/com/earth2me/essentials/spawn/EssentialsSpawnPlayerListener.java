@@ -10,10 +10,12 @@ import net.ess3.api.IEssentials;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.List;
 import java.util.Locale;
@@ -34,8 +36,13 @@ class EssentialsSpawnPlayerListener implements Listener {
         this.spawns = spawns;
     }
 
-    void onPlayerRespawn(final PlayerRespawnEvent event) {
-        final User user = ess.getUser(event.getPlayer());
+    void onPlayerRespawn(final InventoryCloseEvent event) {
+        final Player player = (Player) event.getPlayer();
+        if (event.getInventory().getType() != InventoryType.CRAFTING || !player.isDead() || !player.isOnline() || player.getHealth() > 0) {
+            return;
+        }
+
+        final User user = ess.getUser(player);
 
         if (user.isJailed() && user.getJail() != null && !user.getJail().isEmpty()) {
             return;
@@ -44,17 +51,7 @@ class EssentialsSpawnPlayerListener implements Listener {
         if (ess.getSettings().getRespawnAtHome()) {
             final Location home;
 
-            Location respawnLocation = null;
-            if (ess.getSettings().isRespawnAtBed() &&
-                    (!VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_16_1_R01) ||
-                    (!event.isAnchorSpawn() || ess.getSettings().isRespawnAtAnchor()))) {
-                // cannot nuke this sync load due to the event being sync so it would hand either way
-                if(VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_16_1_R01)) {
-                    respawnLocation = user.getBase().getRespawnLocation();
-                } else { // For versions prior to 1.16.
-                    respawnLocation = user.getBase().getBedSpawnLocation();
-                }
-            }
+            final Location respawnLocation = getRespawnLocation(user);
 
             if (respawnLocation != null) {
                 home = respawnLocation;
@@ -63,17 +60,39 @@ class EssentialsSpawnPlayerListener implements Listener {
             }
 
             if (home != null) {
-                event.setRespawnLocation(home);
-                return;
+                ess.scheduleLocationDelayedTask(home, () -> {
+                    final CompletableFuture<Boolean> future = new CompletableFuture<>();
+                    user.getAsyncTeleport().now(home, false, TeleportCause.PLUGIN, future);
+                }, 1L);
             }
         }
+
         if (tryRandomTeleport(user, ess.getSettings().getRandomRespawnLocation())) {
             return;
         }
         final Location spawn = spawns.getSpawn(user.getGroup());
         if (spawn != null) {
-            event.setRespawnLocation(spawn);
+            ess.scheduleLocationDelayedTask(spawn, () -> {
+                final CompletableFuture<Boolean> future = new CompletableFuture<>();
+                user.getAsyncTeleport().now(spawn, false, TeleportCause.PLUGIN, future);
+            }, 1L);
         }
+    }
+
+    @Nullable
+    private Location getRespawnLocation(User user) {
+        Location respawnLocation = null;
+        // Since this is Folia, the respawn handler will perform differently.
+        // That said, anchor respawns are effectively stripped to mitigate issues.
+        if (ess.getSettings().isRespawnAtBed()) {
+            // cannot nuke this sync load due to the event being sync so it would hand either way
+            if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_16_1_R01)) {
+                respawnLocation = user.getBase().getRespawnLocation();
+            } else { // For versions prior to 1.16.
+                respawnLocation = user.getBase().getBedSpawnLocation();
+            }
+        }
+        return respawnLocation;
     }
 
     void onPlayerJoin(final PlayerJoinEvent event) {
@@ -142,6 +161,17 @@ class EssentialsSpawnPlayerListener implements Listener {
         }, 2L);
     }
 
+    private boolean tryRandomTeleport(final User user, final String name) {
+        if (!ess.getRandomTeleport().hasLocation(name)) {
+            return false;
+        }
+        ess.getRandomTeleport().getRandomLocation(name).thenAccept(location -> {
+            final CompletableFuture<Boolean> future = new CompletableFuture<>();
+            user.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.PLUGIN, future);
+        });
+        return true;
+    }
+
     private class NewPlayerTeleport implements Runnable {
         private final transient User user;
 
@@ -165,16 +195,5 @@ class EssentialsSpawnPlayerListener implements Listener {
                 user.getAsyncTeleport().now(spawn, false, TeleportCause.PLUGIN, future);
             }
         }
-    }
-
-    private boolean tryRandomTeleport(final User user, final String name) {
-        if (!ess.getRandomTeleport().hasLocation(name)) {
-            return false;
-        }
-        ess.getRandomTeleport().getRandomLocation(name).thenAccept(location -> {
-            final CompletableFuture<Boolean> future = new CompletableFuture<>();
-            user.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.PLUGIN, future);
-        });
-        return true;
     }
 }
