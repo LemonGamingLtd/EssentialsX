@@ -10,8 +10,9 @@ import net.ess3.api.IEssentials;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
+import org.bukkit.event.entity.EntityDeathEvent;
+import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.jetbrains.annotations.Nullable;
@@ -35,7 +36,13 @@ class EssentialsSpawnPlayerListener implements Listener {
         this.spawns = spawns;
     }
 
-    void onPlayerRespawnEvent(final PlayerRespawnEvent event) {
+    void onPlayerDeathEvent(final EntityDeathEvent entityDeathEvent) {
+        if (!(entityDeathEvent instanceof PlayerDeathEvent)) {
+            return;
+        }
+
+        final PlayerDeathEvent event = (PlayerDeathEvent) entityDeathEvent;
+
         final Player player = event.getPlayer();
         final User user = ess.getUser(player);
 
@@ -45,7 +52,6 @@ class EssentialsSpawnPlayerListener implements Listener {
 
         if (ess.getSettings().getRespawnAtHome()) {
             final Location home;
-
             final Location respawnLocation = getRespawnLocation(user);
 
             if (respawnLocation != null) {
@@ -55,19 +61,20 @@ class EssentialsSpawnPlayerListener implements Listener {
             }
 
             if (home != null) {
-                event.setRespawnLocation(home);
+                player.setRespawnLocation(home, true);
+                return;
             }
         }
 
         final Location random = getRandomTeleport(user, ess.getSettings().getRandomRespawnLocation()).join();
         if (random != null) {
-            event.setRespawnLocation(random);
+            player.setRespawnLocation(random, true);
             return;
         }
 
         final Location spawn = spawns.getSpawn(user.getGroup());
         if (spawn != null) {
-            event.setRespawnLocation(spawn);
+            player.setRespawnLocation(spawn, true);
         }
     }
 
