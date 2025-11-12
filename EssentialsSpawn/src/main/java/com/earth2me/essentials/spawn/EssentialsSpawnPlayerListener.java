@@ -10,9 +10,8 @@ import net.ess3.api.IEssentials;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.InventoryCloseEvent;
-import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.jetbrains.annotations.Nullable;
@@ -36,12 +35,8 @@ class EssentialsSpawnPlayerListener implements Listener {
         this.spawns = spawns;
     }
 
-    void onPlayerRespawn(final InventoryCloseEvent event) {
-        final Player player = (Player) event.getPlayer();
-        if (event.getInventory().getType() != InventoryType.CRAFTING || !player.isDead() || !player.isOnline() || player.getHealth() > 0) {
-            return;
-        }
-
+    void onPlayerRespawnEvent(final PlayerRespawnEvent event) {
+        final Player player = event.getPlayer();
         final User user = ess.getUser(player);
 
         if (user.isJailed() && user.getJail() != null && !user.getJail().isEmpty()) {
@@ -60,22 +55,19 @@ class EssentialsSpawnPlayerListener implements Listener {
             }
 
             if (home != null) {
-                ess.scheduleLocationDelayedTask(home, () -> {
-                    final CompletableFuture<Boolean> future = new CompletableFuture<>();
-                    user.getAsyncTeleport().now(home, false, TeleportCause.PLUGIN, future);
-                }, 1L);
+                event.setRespawnLocation(home);
             }
         }
 
-        if (tryRandomTeleport(user, ess.getSettings().getRandomRespawnLocation())) {
+        final Location random = getRandomTeleport(user, ess.getSettings().getRandomRespawnLocation()).join();
+        if (random != null) {
+            event.setRespawnLocation(random);
             return;
         }
+
         final Location spawn = spawns.getSpawn(user.getGroup());
         if (spawn != null) {
-            ess.scheduleLocationDelayedTask(spawn, () -> {
-                final CompletableFuture<Boolean> future = new CompletableFuture<>();
-                user.getAsyncTeleport().now(spawn, false, TeleportCause.PLUGIN, future);
-            }, 1L);
+            event.setRespawnLocation(spawn);
         }
     }
 
@@ -161,11 +153,18 @@ class EssentialsSpawnPlayerListener implements Listener {
         }, 2L);
     }
 
-    private boolean tryRandomTeleport(final User user, final String name) {
+    public CompletableFuture<Location> getRandomTeleport(final User user, final String name) {
         if (!ess.getRandomTeleport().hasLocation(name)) {
-            return false;
+            return CompletableFuture.completedFuture(null);
         }
-        ess.getRandomTeleport().getRandomLocation(name).thenAccept(location -> {
+        return ess.getRandomTeleport().getRandomLocation(name);
+    }
+
+    private boolean tryRandomTeleport(final User user, final String name) {
+        getRandomTeleport(user, name).thenAccept(location -> {
+            if (location == null) {
+                return;
+            }
             final CompletableFuture<Boolean> future = new CompletableFuture<>();
             user.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.PLUGIN, future);
         });
