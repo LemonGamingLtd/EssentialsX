@@ -56,7 +56,7 @@ public final class VersionUtil {
     static {
         boolean isFolia;
         try {
-            Class.forName("io.papermc.paper.threadedregions.scheduler.AsyncScheduler");
+            Class.forName("io.papermc.paper.threadedregions.RegionizedServer");
             isFolia = true;
         } catch (Throwable ignored) {
             isFolia = false;
