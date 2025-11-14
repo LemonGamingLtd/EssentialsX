@@ -201,14 +201,14 @@ class EssentialsSpawnPlayerListener implements Listener {
     }
 
     private boolean tryRandomTeleport(final User user, final String name) {
-        getRandomTeleport(user, name).thenAccept(location -> {
+        return getRandomTeleport(user, name).thenApply(location -> {
             if (location == null) {
-                return;
+                return false;
             }
             final CompletableFuture<Boolean> future = new CompletableFuture<>();
             user.getAsyncTeleport().now(location, false, PlayerTeleportEvent.TeleportCause.PLUGIN, future);
-        });
-        return true;
+            return true;
+        }).join();
     }
 
     private class NewPlayerTeleport implements Runnable {
