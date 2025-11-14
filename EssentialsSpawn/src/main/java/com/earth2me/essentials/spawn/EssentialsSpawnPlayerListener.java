@@ -159,9 +159,9 @@ class EssentialsSpawnPlayerListener implements Listener {
 
         final User user = ess.getUser(player);
 
-        final boolean spawnRandomly = tryRandomTeleport(user, ess.getSettings().getRandomSpawnLocation());
+        //final boolean spawnRandomly = tryRandomTeleport(user, ess.getSettings().getRandomSpawnLocation());
 
-        if (!spawnRandomly && !"none".equalsIgnoreCase(ess.getSettings().getNewbieSpawn())) {
+        if (/*!spawnRandomly &&*/ !"none".equalsIgnoreCase(ess.getSettings().getNewbieSpawn())) {
             ess.scheduleEntityDelayedTask(player, new NewPlayerTeleport(user), 1L);
         }
 
