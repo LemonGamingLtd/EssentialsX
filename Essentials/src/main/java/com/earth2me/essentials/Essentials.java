@@ -1355,6 +1355,11 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
     }
 
     @Override
+    public SchedulingProvider getSchedulingProvider() {
+        return schedulingProvider;
+    }
+
+    @Override
     public void dispatchCommand(CommandSender commandSender, String command) {
         if (commandSender instanceof Entity) {
             scheduleEntityDelayedTask((Entity) commandSender, () -> Bukkit.dispatchCommand(commandSender, command));

@@ -125,4 +125,9 @@ public class FoliaSchedulingProvider implements SchedulingProvider, Listener {
         return task::cancel;
     }
 
+    @Override
+    public Type getType() {
+        return Type.FOLIA;
+    }
+
 }

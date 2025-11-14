@@ -106,4 +106,9 @@ public class BukkitSchedulingProvider implements SchedulingProvider {
         return task::cancel;
     }
 
+    @Override
+    public Type getType() {
+        return Type.BUKKIT;
+    }
+
 }

@@ -13,6 +13,7 @@ import org.bukkit.event.Listener;
 import org.bukkit.event.entity.EntityDeathEvent;
 import org.bukkit.event.entity.PlayerDeathEvent;
 import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerRespawnEvent;
 import org.bukkit.event.player.PlayerTeleportEvent;
 import org.bukkit.event.player.PlayerTeleportEvent.TeleportCause;
 import org.jetbrains.annotations.Nullable;
@@ -34,6 +35,38 @@ class EssentialsSpawnPlayerListener implements Listener {
         super();
         this.ess = ess;
         this.spawns = spawns;
+    }
+
+    void onPlayerRespawn(final PlayerRespawnEvent event) {
+        final User user = ess.getUser(event.getPlayer());
+
+        if (user.isJailed() && user.getJail() != null && !user.getJail().isEmpty()) {
+            return;
+        }
+
+        if (ess.getSettings().getRespawnAtHome()) {
+            final Location home;
+            final Location respawnLocation = getRespawnLocation(user);
+            if (respawnLocation != null) {
+                home = respawnLocation;
+            } else {
+                home = user.getHome(user.getLocation());
+            }
+
+            if (home != null) {
+                event.setRespawnLocation(home);
+                return;
+            }
+        }
+
+        if (tryRandomTeleport(user, ess.getSettings().getRandomRespawnLocation())) {
+            return;
+        }
+
+        final Location spawn = spawns.getSpawn(user.getGroup());
+        if (spawn != null) {
+            event.setRespawnLocation(spawn);
+        }
     }
 
     void onPlayerDeathEvent(final EntityDeathEvent entityDeathEvent) {
@@ -95,7 +128,7 @@ class EssentialsSpawnPlayerListener implements Listener {
     }
 
     void onPlayerJoin(final PlayerJoinEvent event) {
-        ess.runTaskAsynchronously(() -> delayedJoin(event.getPlayer()));
+        ess.runTaskLaterAsynchronously(() -> delayedJoin(event.getPlayer()), 1L);
     }
 
     private void delayedJoin(final Player player) {

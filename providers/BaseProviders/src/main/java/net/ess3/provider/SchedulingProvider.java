@@ -37,7 +37,14 @@ public interface SchedulingProvider extends Provider {
 
     EssentialsTask runAsyncTaskRepeating(Runnable runnable, long delay, long period);
 
+    Type getType();
+
     interface EssentialsTask {
         void cancel();
+    }
+
+    enum Type {
+        BUKKIT,
+        FOLIA,
     }
 }
