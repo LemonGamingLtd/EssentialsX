@@ -91,7 +91,7 @@ class EssentialsSpawnPlayerListener implements Listener {
             }
 
             if (home != null) {
-                ess.scheduleLocationDelayedTask(home, () -> {
+                ess.scheduleEntityDelayedTask(player, () -> {
                     final CompletableFuture<Boolean> future = new CompletableFuture<>();
                     user.getAsyncTeleport().now(home, false, TeleportCause.PLUGIN, future);
                 }, 1L);
@@ -104,7 +104,7 @@ class EssentialsSpawnPlayerListener implements Listener {
 
         final Location spawn = spawns.getSpawn(user.getGroup());
         if (spawn != null) {
-            ess.scheduleLocationDelayedTask(spawn, () -> {
+            ess.scheduleEntityDelayedTask(player, () -> {
                 final CompletableFuture<Boolean> future = new CompletableFuture<>();
                 user.getAsyncTeleport().now(spawn, false, TeleportCause.PLUGIN, future);
             }, 5L);
