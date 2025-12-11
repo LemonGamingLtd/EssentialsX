@@ -94,7 +94,8 @@ class EssentialsSpawnPlayerListener implements Listener {
                 ess.scheduleEntityDelayedTask(player, () -> {
                     final CompletableFuture<Boolean> future = new CompletableFuture<>();
                     user.getAsyncTeleport().now(home, false, TeleportCause.PLUGIN, future);
-                }, 1L);
+                }, 5L);
+                return;
             }
         }
 
