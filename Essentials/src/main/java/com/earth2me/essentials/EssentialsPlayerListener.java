@@ -631,7 +631,13 @@ public class EssentialsPlayerListener implements Listener {
                 } else {
                     banEntry = ess.getServer().getBanList(BanList.Type.IP).getBanEntry(event.getAddress().getHostAddress());
                     if (banEntry != null) {
-                        event.setKickMessage(AdventureUtil.miniToLegacy(tlLiteral("banIpJoin", banEntry.getReason())));
+                        final Date banExpiry = banEntry.getExpiration();
+                        if (banExpiry != null) {
+                            final String expiry = DateUtil.formatDateDiff(banExpiry.getTime());
+                            event.setKickMessage(AdventureUtil.miniToLegacy(tlLiteral("tempbanIpJoin", expiry, banEntry.getReason())));
+                        } else {
+                            event.setKickMessage(AdventureUtil.miniToLegacy(tlLiteral("banIpJoin", banEntry.getReason())));
+                        }
                     }
                 }
             }
@@ -681,7 +687,13 @@ public class EssentialsPlayerListener implements Listener {
                 } else {
                     banEntry = ess.getServer().getBanList(BanListType.IP).getBanEntry(event.getAddress());
                     if (banEntry != null) {
-                        event.setKickMessage(AdventureUtil.miniToLegacy(tlLiteral("banIpJoin", banEntry.getReason())));
+                        final Date banExpiry = banEntry.getExpiration();
+                        if (banExpiry != null) {
+                            final String expiry = DateUtil.formatDateDiff(banExpiry.getTime());
+                            event.setKickMessage(AdventureUtil.miniToLegacy(tlLiteral("tempbanIpJoin", expiry, banEntry.getReason())));
+                        } else {
+                            event.setKickMessage(AdventureUtil.miniToLegacy(tlLiteral("banIpJoin", banEntry.getReason())));
+                        }
                     }
                 }
             } else if (event.getLoginResult() == AsyncPlayerPreLoginEvent.Result.KICK_WHITELIST) {
