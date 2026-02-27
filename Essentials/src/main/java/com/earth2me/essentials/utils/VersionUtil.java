@@ -9,6 +9,8 @@ import net.ess3.nms.refl.ReflUtil;
 import org.bukkit.Bukkit;
 
 import java.lang.reflect.Method;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -49,6 +51,26 @@ public final class VersionUtil {
 
     public static final boolean PRE_FLATTENING = VersionUtil.getServerBukkitVersion().isLowerThan(VersionUtil.v1_13_0_R01);
     public static final boolean FOLIA;
+
+    public static final List<String> officialPlugins = Arrays.asList(
+            "EssentialsAntiBuild",
+            "EssentialsChat",
+            "EssentialsDiscord",
+            "EssentialsDiscordLink",
+            "EssentialsGeoIP",
+            "EssentialsProtect",
+            "EssentialsSpawn",
+            "EssentialsXMPP"
+    );
+    public static final List<String> warnPlugins = Arrays.asList(
+            "PermissionsEx",
+            "GroupManager",
+            "bPermissions",
+
+            // Brain-dead chat signing bypass that break EssentialsChat
+            "NoChatReports",
+            "NoEncryption"
+    );
 
     private static final Map<String, SupportStatus> unsupportedServerClasses;
     private static final String PFX = make("8(;4>`");

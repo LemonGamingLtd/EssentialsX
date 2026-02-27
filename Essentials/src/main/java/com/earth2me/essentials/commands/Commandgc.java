@@ -3,6 +3,7 @@ package com.earth2me.essentials.commands;
 import com.earth2me.essentials.CommandSource;
 import com.earth2me.essentials.utils.DateUtil;
 import com.earth2me.essentials.utils.NumberUtil;
+import net.ess3.provider.TileEntityProvider;
 import org.bukkit.ChatColor;
 import org.bukkit.Chunk;
 import org.bukkit.Server;
@@ -37,6 +38,7 @@ public class Commandgc extends EssentialsCommand {
         sender.sendTl("gcfree", Runtime.getRuntime().freeMemory() / 1024 / 1024);
 
         final List<World> worlds = server.getWorlds();
+        final TileEntityProvider tileEntityProvider = ess.provider(TileEntityProvider.class);
         for (final World w : worlds) {
             String worldType = "World";
             switch (w.getEnvironment()) {
@@ -53,7 +55,7 @@ public class Commandgc extends EssentialsCommand {
             try {
                 for (final Chunk chunk : w.getLoadedChunks()) {
                     this.ess.scheduleLocationDelayedTask(chunk.getWorld(), chunk.getX(), chunk.getZ(),
-                        () -> tileEntities.addAndGet(chunk.getTileEntities().length));
+                        () -> tileEntities.addAndGet(tileEntityProvider.getTileEntities(chunk).length));
                 }
             } catch (final java.lang.ClassCastException ex) {
                 ess.getLogger().log(Level.SEVERE, "Corrupted chunk data on world " + w, ex);
