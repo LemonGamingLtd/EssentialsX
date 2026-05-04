@@ -152,6 +152,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.Objects;
+import java.util.stream.Collectors;
 
 import static com.earth2me.essentials.I18n.tlLiteral;
 import static com.earth2me.essentials.I18n.tlLocale;
@@ -910,6 +912,11 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
         if (getSettings().isDebug()) {
             LOGGER.log(Level.INFO, getAdventureFacet().miniToLegacy(tlLiteral("errorCallingCommand", commandLabel)), exception);
         }
+    }
+
+    @Override
+    public List<Player> getJailedPlayers() {
+        return getUsers().getAllUserUUIDs().stream().map(this::getUser).filter(Objects::nonNull).filter(User::isJailed).map(User::getBase).filter(Objects::nonNull).collect(Collectors.toList());
     }
 
     @Override
