@@ -134,7 +134,7 @@ public class AsyncTeleport implements IAsyncTeleport {
 
     @Override
     public void nowUnsafe(Location loc, TeleportCause cause, CompletableFuture<Boolean> future) {
-        final CompletableFuture<Boolean> paperFuture = PaperLib.teleportAsync(teleportOwner.getBase(), loc, cause);
+        final CompletableFuture<Boolean> paperFuture = teleportOwner.getBase().teleportAsync(loc, cause);
         paperFuture.thenAccept(future::complete);
         paperFuture.exceptionally(future::completeExceptionally);
     }
@@ -172,16 +172,16 @@ public class AsyncTeleport implements IAsyncTeleport {
             targetLoc.setX(LocationUtil.getXInsideWorldBorder(targetLoc.getWorld(), targetLoc.getBlockX()));
             targetLoc.setZ(LocationUtil.getZInsideWorldBorder(targetLoc.getWorld(), targetLoc.getBlockZ()));
         }
-        PaperLib.getChunkAtAsync(targetLoc.getWorld(), targetLoc.getBlockX() >> 4, targetLoc.getBlockZ() >> 4, true, true).thenAccept(chunk -> {
+        targetLoc.getWorld().getChunkAtAsync(targetLoc.getBlockX() >> 4, targetLoc.getBlockZ() >> 4, true, true).thenAccept(chunk -> {
             Location loc = targetLoc;
             if (LocationUtil.isBlockUnsafeForUser(ess, teleportee, chunk.getWorld(), loc.getBlockX(), loc.getBlockY(), loc.getBlockZ())) {
                 if (ess.getSettings().isTeleportSafetyEnabled()) {
                     if (ess.getSettings().isForceDisableTeleportSafety()) {
-                        PaperLib.teleportAsync(teleportee.getBase(), loc, cause);
+                        teleportee.getBase().teleportAsync(loc, cause);
                     } else {
                         try {
                             //There's a chance the safer location is outside the loaded chunk so still teleport async here.
-                            PaperLib.teleportAsync(teleportee.getBase(), LocationUtil.getSafeDestination(ess, teleportee, loc), cause);
+                            teleportee.getBase().teleportAsync(LocationUtil.getSafeDestination(ess, teleportee, loc), cause);
                         } catch (final Exception e) {
                             future.completeExceptionally(e);
                             return;
@@ -193,13 +193,13 @@ public class AsyncTeleport implements IAsyncTeleport {
                 }
             } else {
                 if (ess.getSettings().isForceDisableTeleportSafety()) {
-                    PaperLib.teleportAsync(teleportee.getBase(), loc, cause);
+                    teleportee.getBase().teleportAsync(loc, cause);
                 } else {
                     if (ess.getSettings().isTeleportToCenterLocation()) {
                         loc = LocationUtil.getRoundedDestination(loc);
                     }
                     //There's a *small* chance the rounded destination produces a location outside the loaded chunk so still teleport async here.
-                    PaperLib.teleportAsync(teleportee.getBase(), loc, cause);
+                    teleportee.getBase().teleportAsync(loc, cause);
                 }
             }
             future.complete(true);

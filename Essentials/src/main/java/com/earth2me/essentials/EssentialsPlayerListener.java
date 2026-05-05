@@ -1027,7 +1027,7 @@ public class EssentialsPlayerListener implements Listener {
                     while (LocationUtil.isBlockDamaging(loc.getWorld(), loc.getBlockX(), loc.getBlockY() - 1, loc.getBlockZ())) {
                         loc.setY(loc.getY() + 1d);
                     }
-                    PaperLib.teleportAsync(user.getBase(), loc, TeleportCause.PLUGIN);
+                    user.getBase().teleportAsync(loc, TeleportCause.PLUGIN);
                 }
             }
 

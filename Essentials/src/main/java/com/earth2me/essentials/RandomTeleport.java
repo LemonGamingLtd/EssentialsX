@@ -5,7 +5,6 @@ import com.earth2me.essentials.config.EssentialsConfiguration;
 import com.earth2me.essentials.config.entities.LazyLocation;
 import com.earth2me.essentials.utils.LocationUtil;
 import com.earth2me.essentials.utils.VersionUtil;
-import io.papermc.lib.PaperLib;
 import net.ess3.provider.BiomeKeyProvider;
 import net.ess3.provider.BiomeNameProvider;
 import net.ess3.provider.WorldInfoProvider;
@@ -214,7 +213,7 @@ public class RandomTeleport implements IConf {
             360 * RANDOM.nextFloat() - 180,
             0
         );
-        PaperLib.getChunkAtAsync(location).thenAccept(chunk -> {
+        location.getWorld().getChunkAtAsync(location).thenAccept(chunk -> {
             if (World.Environment.NETHER.equals(center.getWorld().getEnvironment())) {
                 location.setY(getNetherYAt(location));
             } else {
