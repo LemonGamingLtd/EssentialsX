@@ -4,8 +4,8 @@ import com.earth2me.essentials.OfflinePlayerStub;
 import com.earth2me.essentials.Trade;
 import com.earth2me.essentials.User;
 import com.earth2me.essentials.adventure.AdventureUtil;
+import com.earth2me.essentials.utils.LocationUtil;
 import com.earth2me.essentials.utils.StringUtil;
-import io.papermc.lib.PaperLib;
 import net.ess3.api.TranslatableException;
 import net.ess3.api.events.UserTeleportHomeEvent;
 import org.bukkit.Location;
@@ -48,7 +48,7 @@ public class Commandhome extends EssentialsCommand {
                 if (!player.getBase().isOnline() || player.getBase() instanceof OfflinePlayerStub) {
                     throw new TranslatableException("bedOffline");
                 }
-                PaperLib.getBedSpawnLocationAsync(player.getBase(), true).thenAccept(location -> {
+                LocationUtil.getLocationAtAsync(user.getBase().getPotentialBedLocation(), true).thenAccept(location -> {
                     final CompletableFuture<Boolean> future = getNewExceptionFuture(user.getSource(), commandLabel);
                     if (location != null) {
                         final UserTeleportHomeEvent event = new UserTeleportHomeEvent(user, "bed", location, UserTeleportHomeEvent.HomeType.BED);
@@ -113,7 +113,7 @@ public class Commandhome extends EssentialsCommand {
                 message.complete(null);
                 return;
             }
-            PaperLib.getBedSpawnLocationAsync(player.getBase(), true).thenAccept(message::complete);
+            LocationUtil.getLocationAtAsync(user.getBase().getPotentialBedLocation(), true).thenAccept(message::complete);
         }
         throw new NoChargeException();
     }

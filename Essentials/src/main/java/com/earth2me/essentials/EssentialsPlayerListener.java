@@ -15,7 +15,6 @@ import com.earth2me.essentials.utils.FormatUtil;
 import com.earth2me.essentials.utils.LocationUtil;
 import com.earth2me.essentials.utils.MaterialUtil;
 import com.earth2me.essentials.utils.VersionUtil;
-import io.papermc.lib.PaperLib;
 import io.papermc.paper.ban.BanListType;
 import io.papermc.paper.event.connection.configuration.AsyncPlayerConnectionConfigureEvent;
 import io.papermc.paper.event.player.PlayerServerFullCheckEvent;
@@ -623,7 +622,7 @@ public class EssentialsPlayerListener implements Listener {
 
         final Location loc = user.getHome(user.getLocation());
         if (loc == null) {
-            PaperLib.getBedSpawnLocationAsync(user.getBase(), false).thenAccept(location -> {
+            LocationUtil.getLocationAtAsync(user.getBase().getPotentialBedLocation(), false).thenAccept(location -> {
                 if (location != null) {
                     user.getBase().setCompassTarget(location);
                 }

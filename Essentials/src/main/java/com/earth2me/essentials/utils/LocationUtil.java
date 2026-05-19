@@ -12,12 +12,14 @@ import org.bukkit.World;
 import org.bukkit.block.Block;
 import org.bukkit.entity.LivingEntity;
 import org.bukkit.inventory.ItemStack;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public final class LocationUtil {
     public static final int RADIUS = 3;
@@ -91,6 +93,14 @@ public final class LocationUtil {
         } else {
             HOLLOW_MATERIALS.removeAll(WATER_TYPES);
         }
+    }
+
+    public static CompletableFuture<Location> getLocationAtAsync(@Nullable Location location, boolean urgent) {
+        if (location == null) {
+            return CompletableFuture.completedFuture(null);
+        }
+        return location.getWorld().getChunkAtAsync(location.getBlockX() >> 4, location.getBlockZ() >> 4, urgent)
+            .thenApply(chunk -> location);
     }
 
     public static ItemStack convertBlockToItem(final Block block) {

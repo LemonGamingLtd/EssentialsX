@@ -4,7 +4,6 @@ import com.earth2me.essentials.api.IAsyncTeleport;
 import com.earth2me.essentials.commands.WarpNotFoundException;
 import com.earth2me.essentials.utils.DateUtil;
 import com.earth2me.essentials.utils.LocationUtil;
-import io.papermc.lib.PaperLib;
 import net.ess3.api.IEssentials;
 import net.ess3.api.IUser;
 import net.ess3.api.TranslatableException;
@@ -379,7 +378,7 @@ public class AsyncTeleport implements IAsyncTeleport {
 
     void respawnNow(final IUser teleportee, final TeleportCause cause, final CompletableFuture<Boolean> future) {
         final Player player = teleportee.getBase();
-        PaperLib.getBedSpawnLocationAsync(player, true).thenAccept(location -> {
+        LocationUtil.getLocationAtAsync(player.getPotentialBedLocation(), true).thenAccept(location -> {
             if (location != null) {
                 nowAsync(teleportee, new LocationTarget(location), cause, future);
             } else {
