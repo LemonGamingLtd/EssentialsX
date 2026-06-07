@@ -14,6 +14,7 @@ import java.util.Locale;
 import static com.earth2me.essentials.I18n.tlLiteral;
 
 public final class NumberUtil {
+    public static final int MAX_CURRENCY_DECIMAL_PLACES = 2;
 
     private static final BigDecimal THOUSAND = new BigDecimal(1000);
     private static final BigDecimal MILLION = new BigDecimal(1_000_000);
@@ -191,6 +192,17 @@ public final class NumberUtil {
 
     public static BigDecimal parseStringToBDecimal(final String sArg) throws ParseException, InvalidModifierException {
         return parseStringToBDecimal(sArg, PRETTY_LOCALE);
+    }
+
+    public static boolean hasCurrencyPrecision(final BigDecimal amount) {
+        return amount.stripTrailingZeros().scale() <= MAX_CURRENCY_DECIMAL_PLACES;
+    }
+
+    public static BigDecimal roundCurrencyAmount(final double amount) {
+        if (!Double.isFinite(amount)) {
+            throw new IllegalArgumentException("Amount must be finite!");
+        }
+        return BigDecimal.valueOf(amount).setScale(MAX_CURRENCY_DECIMAL_PLACES, RoundingMode.HALF_UP);
     }
 
     /**

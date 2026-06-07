@@ -49,6 +49,10 @@ public class Commandpay extends EssentialsLoopCommand {
             amount = NumberUtil.parseStringToBDecimal(ogStr);
         }
 
+        if (!NumberUtil.hasCurrencyPrecision(amount)) {
+            throw new TranslatableException("currencyAmountPrecision", NumberUtil.MAX_CURRENCY_DECIMAL_PLACES);
+        }
+
         if (amount.compareTo(ess.getSettings().getMinimumPayAmount()) < 0) { // Check if amount is less than minimum-pay-amount
             throw new TranslatableException("minimumPayAmount", AdventureUtil.parsed(NumberUtil.displayCurrencyExactly(ess.getSettings().getMinimumPayAmount(), ess)));
         }

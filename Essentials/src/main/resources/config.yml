@@ -892,7 +892,7 @@ economy-log-uuids: false
 economy-log-update-enabled: false
 
 # The minimum acceptable amount to be used in /pay.
-minimum-pay-amount: 0.001
+minimum-pay-amount: 0.01
 
 # Enable this to block players who try to /pay someone who is ignoring them.
 pay-excludes-ignore-list: false
