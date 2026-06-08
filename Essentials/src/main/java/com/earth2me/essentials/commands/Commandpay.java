@@ -19,6 +19,8 @@ import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 public class Commandpay extends EssentialsLoopCommand {
+    private static final int MAX_PAY_DECIMAL_PLACES = 2;
+
     public Commandpay() {
         super("pay");
     }
@@ -47,6 +49,10 @@ public class Commandpay extends EssentialsLoopCommand {
             amount = NumberUtil.parseStringToBDecimal(ogStr, user.getPlayerLocale(playerLocale));
         } else {
             amount = NumberUtil.parseStringToBDecimal(ogStr);
+        }
+
+        if (!hasPayPrecision(amount)) {
+            throw new TranslatableException("payAmountPrecision", MAX_PAY_DECIMAL_PLACES);
         }
 
         if (amount.compareTo(ess.getSettings().getMinimumPayAmount()) < 0) { // Check if amount is less than minimum-pay-amount
@@ -115,5 +121,9 @@ public class Commandpay extends EssentialsLoopCommand {
         } else {
             return Collections.emptyList();
         }
+    }
+
+    private boolean hasPayPrecision(final BigDecimal amount) {
+        return amount.stripTrailingZeros().scale() <= MAX_PAY_DECIMAL_PLACES;
     }
 }
