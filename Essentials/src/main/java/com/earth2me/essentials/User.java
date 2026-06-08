@@ -300,9 +300,6 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
         if (value.compareTo(BigDecimal.ZERO) < 1) {
             throw new Exception(tlLocale(playerLocale, "payMustBePositive"));
         }
-        if (!NumberUtil.hasCurrencyPrecision(value)) {
-            throw new TranslatableException("currencyAmountPrecision", NumberUtil.MAX_CURRENCY_DECIMAL_PLACES);
-        }
 
         if (canAfford(value)) {
             // Call an event for pre-transaction
@@ -312,9 +309,6 @@ public class User extends UserData implements Comparable<User>, IMessageRecipien
                 return;
             }
             value = preTransactionEvent.getAmount();
-            if (!NumberUtil.hasCurrencyPrecision(value)) {
-                throw new TranslatableException("currencyAmountPrecision", NumberUtil.MAX_CURRENCY_DECIMAL_PLACES);
-            }
 
             setMoney(getMoney().subtract(value), cause);
             final BigDecimal multiplier = ess.getSettings().getPayUsageMultiplier();

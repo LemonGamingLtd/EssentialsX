@@ -1732,7 +1732,7 @@ public class Settings implements net.ess3.api.ISettings {
 
     @Override
     public BigDecimal getMinimumPayAmount() {
-        return new BigDecimal(config.getString("minimum-pay-amount", "0.01"));
+        return new BigDecimal(config.getString("minimum-pay-amount", "0.001"));
     }
 
     @Override

@@ -16,7 +16,6 @@ import org.bukkit.entity.Player;
 
 import java.io.File;
 import java.math.BigDecimal;
-import java.math.RoundingMode;
 import java.text.MessageFormat;
 import java.util.Collections;
 import java.util.List;
@@ -33,7 +32,6 @@ import java.util.logging.Level;
 public class VaultEconomyProvider implements Economy {
     private static final String WARN_NPC_RECREATE_1 = "Account creation was requested for NPC user {0}, but an account file with UUID {1} already exists.";
     private static final String WARN_NPC_RECREATE_2 = "Essentials will create a new account as requested by the other plugin, but this is almost certainly a bug and should be reported.";
-    private static final BigDecimal VAULT_AMOUNT_TOLERANCE = new BigDecimal("0.00000001");
 
     private final Essentials ess;
 
@@ -58,12 +56,12 @@ public class VaultEconomyProvider implements Economy {
 
     @Override
     public int fractionalDigits() {
-        return NumberUtil.MAX_CURRENCY_DECIMAL_PLACES;
+        return -1;
     }
 
     @Override
     public String format(double amount) {
-        return ess.getAdventureFacet().miniToLegacy(NumberUtil.displayCurrency(NumberUtil.roundCurrencyAmount(amount), ess));
+        return ess.getAdventureFacet().miniToLegacy(NumberUtil.displayCurrency(BigDecimal.valueOf(amount), ess));
     }
 
     @Override
@@ -123,16 +121,13 @@ public class VaultEconomyProvider implements Economy {
     }
 
     private double getDoubleValue(final BigDecimal value) {
-        return value.setScale(NumberUtil.MAX_CURRENCY_DECIMAL_PLACES, RoundingMode.FLOOR).doubleValue();
-    }
-
-    private BigDecimal getVaultAmount(final double amount) {
-        final BigDecimal roundedAmount = NumberUtil.roundCurrencyAmount(amount);
-        final BigDecimal exactAmount = BigDecimal.valueOf(amount);
-        if (exactAmount.subtract(roundedAmount).abs().compareTo(VAULT_AMOUNT_TOLERANCE) > 0) {
-            throw new IllegalArgumentException("Amount cannot have more than " + NumberUtil.MAX_CURRENCY_DECIMAL_PLACES + " decimal places!");
+        double amount = value.doubleValue();
+        if (new BigDecimal(amount).compareTo(value) > 0) {
+            // closest double is bigger than the exact amount
+            // -> get the previous double value to not return more money than the user has
+            amount = Math.nextAfter(amount, Double.NEGATIVE_INFINITY);
         }
-        return roundedAmount;
+        return amount;
     }
 
     @Override
@@ -149,8 +144,8 @@ public class VaultEconomyProvider implements Economy {
     @Override
     public boolean has(String playerName, double amount) {
         try {
-            return com.earth2me.essentials.api.Economy.hasEnough(playerName, getVaultAmount(amount));
-        } catch (IllegalArgumentException | UserDoesNotExistException e) {
+            return com.earth2me.essentials.api.Economy.hasEnough(playerName, amount);
+        } catch (UserDoesNotExistException e) {
             return false;
         }
     }
@@ -158,8 +153,8 @@ public class VaultEconomyProvider implements Economy {
     @Override
     public boolean has(OfflinePlayer player, double amount) {
         try {
-            return com.earth2me.essentials.api.Economy.hasEnough(player.getUniqueId(), getVaultAmount(amount));
-        } catch (IllegalArgumentException | UserDoesNotExistException e) {
+            return com.earth2me.essentials.api.Economy.hasEnough(player.getUniqueId(), BigDecimal.valueOf(amount));
+        } catch (UserDoesNotExistException e) {
             return false;
         }
     }
@@ -185,11 +180,8 @@ public class VaultEconomyProvider implements Economy {
         }
 
         try {
-            final BigDecimal vaultAmount = getVaultAmount(amount);
-            com.earth2me.essentials.api.Economy.substract(playerName, vaultAmount);
-            return new EconomyResponse(vaultAmount.doubleValue(), getBalance(playerName), EconomyResponse.ResponseType.SUCCESS, null);
-        } catch (IllegalArgumentException e) {
-            return new EconomyResponse(0, getBalance(playerName), EconomyResponse.ResponseType.FAILURE, e.getMessage());
+            com.earth2me.essentials.api.Economy.subtract(playerName, amount);
+            return new EconomyResponse(amount, getBalance(playerName), EconomyResponse.ResponseType.SUCCESS, null);
         } catch (UserDoesNotExistException e) {
             return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "User does not exist!");
         } catch (NoLoanPermittedException e) {
@@ -209,11 +201,8 @@ public class VaultEconomyProvider implements Economy {
         }
 
         try {
-            final BigDecimal vaultAmount = getVaultAmount(amount);
-            com.earth2me.essentials.api.Economy.subtract(player.getUniqueId(), vaultAmount);
-            return new EconomyResponse(vaultAmount.doubleValue(), getBalance(player), EconomyResponse.ResponseType.SUCCESS, null);
-        } catch (IllegalArgumentException e) {
-            return new EconomyResponse(0, getBalance(player), EconomyResponse.ResponseType.FAILURE, e.getMessage());
+            com.earth2me.essentials.api.Economy.subtract(player.getUniqueId(), BigDecimal.valueOf(amount));
+            return new EconomyResponse(amount, getBalance(player), EconomyResponse.ResponseType.SUCCESS, null);
         } catch (UserDoesNotExistException e) {
             return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "User does not exist!");
         } catch (NoLoanPermittedException e) {
@@ -244,11 +233,8 @@ public class VaultEconomyProvider implements Economy {
         }
 
         try {
-            final BigDecimal vaultAmount = getVaultAmount(amount);
-            com.earth2me.essentials.api.Economy.add(playerName, vaultAmount);
-            return new EconomyResponse(vaultAmount.doubleValue(), getBalance(playerName), EconomyResponse.ResponseType.SUCCESS, null);
-        } catch (IllegalArgumentException e) {
-            return new EconomyResponse(0, getBalance(playerName), EconomyResponse.ResponseType.FAILURE, e.getMessage());
+            com.earth2me.essentials.api.Economy.add(playerName, amount);
+            return new EconomyResponse(amount, getBalance(playerName), EconomyResponse.ResponseType.SUCCESS, null);
         } catch (UserDoesNotExistException e) {
             return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "User does not exist!");
         } catch (NoLoanPermittedException e) {
@@ -268,11 +254,8 @@ public class VaultEconomyProvider implements Economy {
         }
 
         try {
-            final BigDecimal vaultAmount = getVaultAmount(amount);
-            com.earth2me.essentials.api.Economy.add(player.getUniqueId(), vaultAmount);
-            return new EconomyResponse(vaultAmount.doubleValue(), getBalance(player), EconomyResponse.ResponseType.SUCCESS, null);
-        } catch (IllegalArgumentException e) {
-            return new EconomyResponse(0, getBalance(player), EconomyResponse.ResponseType.FAILURE, e.getMessage());
+            com.earth2me.essentials.api.Economy.add(player.getUniqueId(), BigDecimal.valueOf(amount));
+            return new EconomyResponse(amount, getBalance(player), EconomyResponse.ResponseType.SUCCESS, null);
         } catch (UserDoesNotExistException e) {
             return new EconomyResponse(0, 0, EconomyResponse.ResponseType.FAILURE, "User does not exist!");
         } catch (NoLoanPermittedException e) {
