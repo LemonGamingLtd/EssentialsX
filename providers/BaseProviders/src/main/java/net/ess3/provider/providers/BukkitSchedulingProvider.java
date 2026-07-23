@@ -107,6 +107,11 @@ public class BukkitSchedulingProvider implements SchedulingProvider {
     }
 
     @Override
+    public void cancelAllTasks() {
+        plugin.getServer().getScheduler().cancelTasks(plugin);
+    }
+
+    @Override
     public Type getType() {
         return Type.BUKKIT;
     }

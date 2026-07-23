@@ -39,6 +39,8 @@ public interface SchedulingProvider extends Provider {
 
     Type getType();
 
+    void cancelAllTasks();
+
     interface EssentialsTask {
         void cancel();
     }

@@ -603,7 +603,7 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
 
         EssentialsConfiguration.shutdownExecutor();
         PasteUtil.shutdownExecutor();
-        getServer().getScheduler().cancelTasks(this);
+        schedulingProvider.cancelAllTasks();
 
         HandlerList.unregisterAll(this);
     }

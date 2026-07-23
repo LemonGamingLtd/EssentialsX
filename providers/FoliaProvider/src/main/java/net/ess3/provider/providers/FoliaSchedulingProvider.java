@@ -126,6 +126,13 @@ public class FoliaSchedulingProvider implements SchedulingProvider, Listener {
     }
 
     @Override
+    public void cancelAllTasks() {
+        plugin.getServer().getAsyncScheduler().cancelTasks(plugin);
+        plugin.getServer().getGlobalRegionScheduler().cancelTasks(plugin);
+        // Folia will deal with shutting down regional schedulers (and entity ones consequently)
+    }
+
+    @Override
     public Type getType() {
         return Type.FOLIA;
     }
