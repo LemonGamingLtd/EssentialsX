@@ -139,6 +139,8 @@ public interface ISettings extends IConf {
 
     boolean isAlwaysTeleportSafety();
 
+    boolean isConsiderWorldHeightForTeleportSafety();
+
     boolean isTeleportPassengerDismount();
 
     boolean isForcePassengerTeleport();
