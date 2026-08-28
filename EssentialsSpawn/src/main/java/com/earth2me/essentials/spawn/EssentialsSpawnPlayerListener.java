@@ -7,7 +7,6 @@ import com.earth2me.essentials.textreader.IText;
 import com.earth2me.essentials.textreader.KeywordReplacer;
 import com.earth2me.essentials.utils.VersionUtil;
 import net.ess3.api.IEssentials;
-import net.essentialsx.api.v2.events.AsyncUserDataLoadEvent;
 import org.bukkit.Location;
 import org.bukkit.entity.Player;
 import org.bukkit.event.Listener;
