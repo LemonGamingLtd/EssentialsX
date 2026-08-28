@@ -4,6 +4,7 @@ import com.earth2me.essentials.EssentialsLogger;
 import com.earth2me.essentials.metrics.MetricsWrapper;
 import net.ess3.api.IEssentials;
 import net.ess3.provider.SchedulingProvider;
+import net.essentialsx.api.v2.events.AsyncUserDataLoadEvent;
 import org.bukkit.Location;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandSender;
@@ -55,8 +56,11 @@ public class EssentialsSpawn extends JavaPlugin implements IEssentialsSpawn {
 
         final EventPriority joinPriority = ess.getSettings().getSpawnJoinPriority();
         if (joinPriority != null) {
-            pluginManager.registerEvent(PlayerJoinEvent.class, playerListener, joinPriority, (ll, event) ->
-                ((EssentialsSpawnPlayerListener) ll).onPlayerJoin((PlayerJoinEvent) event), this);
+            // Listen on AsyncUserDataLoadEvent (fired after the core join flow) so we can reliably tell whether this is
+            // a player's first join, instead of using Player#hasPlayedBefore() which doesn't since data is persisted during the configuration phase.
+            // See https://github.com/EssentialsX/Essentials/issues/6466
+            pluginManager.registerEvent(AsyncUserDataLoadEvent.class, playerListener, joinPriority, (ll, event) ->
+                ((EssentialsSpawnPlayerListener) ll).onUserDataLoad((AsyncUserDataLoadEvent) event), this);
         }
 
         if (metrics == null) {
