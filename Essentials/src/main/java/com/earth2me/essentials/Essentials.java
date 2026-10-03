@@ -101,6 +101,7 @@ import net.ess3.provider.providers.ModernSignDataProvider;
 import net.ess3.provider.providers.ModernSyncCommandsProvider;
 import net.ess3.provider.providers.PaperBiomeKeyProvider;
 import net.ess3.provider.providers.PaperContainerProvider;
+import net.ess3.provider.providers.PaperItemComponentProvider;
 import net.ess3.provider.providers.PaperKnownCommandsProvider;
 import net.ess3.provider.providers.PaperMaterialTagProvider;
 import net.ess3.provider.providers.PaperRecipeBookListener;
@@ -369,6 +370,9 @@ public class Essentials extends JavaPlugin implements net.ess3.api.IEssentials {
 
             // Serialization Provider
             providerFactory.registerProvider(PaperSerializationProvider.class);
+
+            // Item Component Provider
+            providerFactory.registerProvider(PaperItemComponentProvider.class);
 
             // Known Commands Provider
             providerFactory.registerProvider(ReflKnownCommandsProvider.class, PaperKnownCommandsProvider.class);
