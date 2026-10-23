@@ -7,6 +7,7 @@ dependencies {
         exclude group: "org.bukkit", module: "bukkit"
     }
     compileOnly 'net.luckperms:api:5.3'
+    compileOnly 'me.clip:placeholderapi:2.11.6'
 
     api 'io.papermc:paperlib:1.0.7'
 

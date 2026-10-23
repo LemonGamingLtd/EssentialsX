@@ -3,12 +3,17 @@ package com.earth2me.essentials.utils;
 import com.earth2me.essentials.adventure.AdventureUtil;
 import net.ess3.api.IUser;
 import net.ess3.provider.AbstractChatEvent;
+import net.kyori.adventure.text.Component;
+import net.kyori.adventure.text.format.TextDecoration;
 import net.kyori.adventure.text.minimessage.MiniMessage;
+import net.kyori.adventure.text.serializer.gson.GsonComponentSerializer;
 import net.kyori.adventure.text.serializer.legacy.LegacyComponentSerializer;
 import org.bukkit.ChatColor;
 import org.bukkit.Color;
 
+import java.util.ArrayList;
 import java.util.EnumSet;
+import java.util.List;
 import java.util.Locale;
 import java.util.Set;
 import java.util.regex.Matcher;
@@ -40,6 +45,9 @@ public final class FormatUtil {
     private static final LegacyComponentSerializer LEGACY_SECTION_HEX = LEGACY_SECTION.toBuilder().hexColors().build();
 
     private static final MiniMessage MINI_MESSAGE_LENIENT = MiniMessage.builder().strict(false).build();
+    private static final Pattern LEGACY_TO_MINI_PATTERN = Pattern.compile("(&)?&(?:([0-9a-fk-orA-FK-OR])|#([0-9a-fA-F]{6}))");
+    // Bukkit's legacy conversion resets these whenever a colour code is used
+    private static final String LEGACY_COLOR_RESET = "<!b><!i><!u><!st><!obf>";
     //
 
     private FormatUtil() {
@@ -100,6 +108,83 @@ public final class FormatUtil {
             return null;
         }
         return replaceColor(input, EnumSet.allOf(ChatColor.class), true, true);
+    }
+
+    // Whether replaceFormat would lose formatting that legacy text can't hold (fonts), so replaceFormatJson is needed
+    public static boolean needsJsonFormat(final String input) {
+        return input != null && hasFont(MINI_MESSAGE_LENIENT.deserialize(input.replaceAll(STRIP_ALL_PATTERN.pattern(), "&$1")));
+    }
+
+    // Same formatting as replaceFormat, but as a JSON text component so fonts are kept
+    public static String replaceFormatJson(final String input) {
+        if (input == null) {
+            return null;
+        }
+        final String miniMessage = legacyToMiniMessage(input.replaceAll(STRIP_ALL_PATTERN.pattern(), "&$1"));
+        return GsonComponentSerializer.gson().serialize(unitalicizeColors(MINI_MESSAGE_LENIENT.deserialize(miniMessage)));
+    }
+
+    private static boolean hasFont(final Component component) {
+        if (component.font() != null) {
+            return true;
+        }
+        for (final Component child : component.children()) {
+            if (hasFont(child)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    // Unclosed tags, so like legacy codes they carry on to the rest of the text
+    private static String legacyToMiniMessage(final String input) {
+        final StringBuffer builder = new StringBuffer();
+        final Matcher matcher = LEGACY_TO_MINI_PATTERN.matcher(input);
+        while (matcher.find()) {
+            final String replacement;
+            if (matcher.group(1) != null) {
+                replacement = matcher.group().substring(1);
+            } else if (matcher.group(3) != null) {
+                replacement = LEGACY_COLOR_RESET + "<#" + matcher.group(3) + ">";
+            } else {
+                replacement = legacyCodeToMiniMessage(Character.toLowerCase(matcher.group(2).charAt(0)));
+            }
+            matcher.appendReplacement(builder, Matcher.quoteReplacement(replacement));
+        }
+        matcher.appendTail(builder);
+        return builder.toString();
+    }
+
+    private static String legacyCodeToMiniMessage(final char code) {
+        switch (code) {
+            case 'k':
+                return "<obf>";
+            case 'l':
+                return "<b>";
+            case 'm':
+                return "<st>";
+            case 'n':
+                return "<u>";
+            case 'o':
+                return "<i>";
+            case 'r':
+                return "<reset>" + LEGACY_COLOR_RESET;
+            default:
+                return LEGACY_COLOR_RESET + "<" + ChatColor.getByChar(code).name().toLowerCase(Locale.ENGLISH) + ">";
+        }
+    }
+
+    // Matches Bukkit's legacy text conversion, where a colour code turns off the default item name/lore italics
+    private static Component unitalicizeColors(final Component component) {
+        final List<Component> children = new ArrayList<>();
+        for (final Component child : component.children()) {
+            children.add(unitalicizeColors(child));
+        }
+        Component result = component.children(children);
+        if (result.color() != null && result.decoration(TextDecoration.ITALIC) == TextDecoration.State.NOT_SET) {
+            result = result.decoration(TextDecoration.ITALIC, false);
+        }
+        return result;
     }
 
     static String replaceColor(String input, final Set<ChatColor> supported, final boolean rgb, boolean miniMessage) {

@@ -220,6 +220,7 @@ public class Kit {
                     }
 
                     final MetaItemStack metaStack = new MetaItemStack(parseStack);
+                    metaStack.setPlaceholderTarget(user.getBase());
 
                     if (parts.length > 2) {
                         // We pass a null sender here because kits should not do perm checks

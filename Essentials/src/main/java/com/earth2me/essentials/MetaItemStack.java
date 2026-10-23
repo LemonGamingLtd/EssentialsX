@@ -12,6 +12,7 @@ import com.google.common.base.Joiner;
 import net.ess3.api.IEssentials;
 import net.ess3.api.TranslatableException;
 import net.ess3.provider.BannerDataProvider;
+import net.ess3.provider.ItemComponentProvider;
 import net.ess3.provider.ItemUnbreakableProvider;
 import net.ess3.provider.PatternTypeProvider;
 import net.ess3.provider.PotionMetaProvider;
@@ -23,6 +24,7 @@ import org.bukkit.NamespacedKey;
 import org.bukkit.block.Banner;
 import org.bukkit.block.banner.PatternType;
 import org.bukkit.enchantments.Enchantment;
+import org.bukkit.entity.Player;
 import org.bukkit.Registry;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -51,6 +53,7 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.logging.Level;
+import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class MetaItemStack {
@@ -70,7 +73,9 @@ public class MetaItemStack {
 
     private static final transient Pattern splitPattern = Pattern.compile("[:+',;.]");
     private static final transient Pattern hexPattern = Pattern.compile("#([0-9a-fA-F]{6})");
+    private static final transient Pattern placeholderPattern = Pattern.compile("%([^%]+)%");
     private ItemStack stack;
+    private Player placeholderTarget;
     private FireworkEffect.Builder builder = FireworkEffect.builder();
     private PotionEffectType pEffectType;
     private PotionEffect pEffect;
@@ -86,6 +91,14 @@ public class MetaItemStack {
 
     public MetaItemStack(final ItemStack stack) {
         this.stack = stack.clone();
+    }
+
+    /**
+     * Sets the player whose PlaceholderAPI placeholders are filled in for item names and lore.
+     * @param player the player, or null to leave placeholders as-is.
+     */
+    public void setPlaceholderTarget(final Player player) {
+        this.placeholderTarget = player;
     }
 
     /**
@@ -258,17 +271,32 @@ public class MetaItemStack {
         }
 
         if (split.length > 1 && split[0].equalsIgnoreCase("name") && hasMetaPermission(sender, "name", false, true, ess)) {
-            final String displayName = FormatUtil.replaceFormat(split[1].replaceAll("(?<!\\\\)_", " ").replace("\\_", "_"));
+            final String displayName = setPlaceholders(split[1], ess).replaceAll("(?<!\\\\)_", " ").replace("\\_", "_");
             final ItemMeta meta = stack.getItemMeta();
-            meta.setDisplayName(displayName);
+            final ItemComponentProvider componentProvider = ess.provider(ItemComponentProvider.class);
+            if (componentProvider != null && FormatUtil.needsJsonFormat(displayName)) {
+                componentProvider.setDisplayName(meta, FormatUtil.replaceFormatJson(displayName));
+            } else {
+                meta.setDisplayName(FormatUtil.replaceFormat(displayName));
+            }
             stack.setItemMeta(meta);
         } else if (split.length > 1 && (split[0].equalsIgnoreCase("lore") || split[0].equalsIgnoreCase("desc")) && hasMetaPermission(sender, "lore", false, true, ess)) {
             final List<String> lore = new ArrayList<>();
             for (final String line : split[1].split("(?<!\\\\)\\|")) {
-                lore.add(FormatUtil.replaceFormat(line.replaceAll("(?<!\\\\)_", " ").replace("\\_", "_").replace("\\|", "|")));
+                lore.add(setPlaceholders(line, ess).replaceAll("(?<!\\\\)_", " ").replace("\\_", "_").replace("\\|", "|"));
             }
             final ItemMeta meta = stack.getItemMeta();
-            meta.setLore(lore);
+            final ItemComponentProvider componentProvider = ess.provider(ItemComponentProvider.class);
+            if (componentProvider != null && lore.stream().anyMatch(FormatUtil::needsJsonFormat)) {
+                final List<String> jsonLore = new ArrayList<>();
+                for (final String line : lore) {
+                    jsonLore.add(FormatUtil.replaceFormatJson(line));
+                }
+                componentProvider.setLore(meta, jsonLore);
+            } else {
+                lore.replaceAll(FormatUtil::replaceFormat);
+                meta.setLore(lore);
+            }
             stack.setItemMeta(meta);
         } else if ((split[0].equalsIgnoreCase("custom-model-data") || split[0].equalsIgnoreCase("cmd") || split[0].equalsIgnoreCase("CustomModelData")) && hasMetaPermission(sender, "custom-model-data", false, true, ess)) {
             if (VersionUtil.getServerBukkitVersion().isHigherThanOrEqualTo(VersionUtil.v1_14_R01)) {
@@ -761,6 +789,22 @@ public class MetaItemStack {
             meta.setBlockState(banner);
             stack.setItemMeta(meta);
         }
+    }
+
+    // Placeholder output has its underscores escaped so the name/lore parsing doesn't turn them into spaces
+    private String setPlaceholders(final String input, final IEssentials ess) {
+        if (placeholderTarget == null || input.indexOf('%') == -1 || !ess.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")) {
+            return input;
+        }
+        final Matcher matcher = placeholderPattern.matcher(input);
+        final StringBuffer buffer = new StringBuffer();
+        while (matcher.find()) {
+            final String placeholder = matcher.group();
+            final String value = me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(placeholderTarget, placeholder);
+            matcher.appendReplacement(buffer, Matcher.quoteReplacement(value.equals(placeholder) ? placeholder : value.replace("_", "\\_")));
+        }
+        matcher.appendTail(buffer);
+        return buffer.toString();
     }
 
     private boolean hasMetaPermission(final CommandSource sender, final String metaPerm, final boolean graceful, final boolean includeBase, final IEssentials ess) throws Exception {
