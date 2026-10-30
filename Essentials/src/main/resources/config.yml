@@ -842,6 +842,16 @@ compass-towards-home-perm: false
 # If set to false, players will not be teleported when they run /home without first setting a home.
 spawn-if-no-home: true
 
+# A command (without the /) to run as the player when they use /home without first setting a home.
+# When it runs, it replaces the bed/spawn teleport above. Leave empty to disable.
+# Example: 'plot home' to send players to their plot instead.
+no-home-command: ''
+
+# Only run no-home-command when this PlaceholderAPI placeholder resolves to "true" for the player.
+# Otherwise the bed/spawn behaviour above is used. Leave empty to always run it.
+# Example: '%plotsquared_has_plot%'
+no-home-command-condition: ''
+
 # Should players be asked to provide confirmation for homes they attempt to overwrite?
 confirm-home-overwrite: false
 

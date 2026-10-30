@@ -438,6 +438,10 @@ public interface ISettings extends IConf {
 
     boolean isSpawnIfNoHome();
 
+    String getNoHomeCommand();
+
+    String getNoHomeCommandCondition();
+
     boolean isConfirmHomeOverwrite();
 
     boolean infoAfterDeath();

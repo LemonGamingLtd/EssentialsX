@@ -75,7 +75,10 @@ public class Commandhome extends EssentialsCommand {
             message.thenAccept(bed -> {
                 final List<String> homes = finalPlayer.getHomes();
                 if (homes.isEmpty() && finalPlayer.equals(user)) {
-                    if (ess.getSettings().isSpawnIfNoHome()) {
+                    final String noHomeCommand = getNoHomeCommand(user);
+                    if (noHomeCommand != null) {
+                        ess.scheduleEntityDelayedTask(user.getBase(), () -> user.getBase().performCommand(noHomeCommand));
+                    } else if (ess.getSettings().isSpawnIfNoHome()) {
                         final boolean useBed = bed != null && user.isAuthorized("essentials.home.bed");
                         final UserTeleportHomeEvent event = new UserTeleportHomeEvent(user, null, useBed ? bed : finalPlayer.getWorld().getSpawnLocation(), useBed ? UserTeleportHomeEvent.HomeType.BED : UserTeleportHomeEvent.HomeType.SPAWN);
                         server.getPluginManager().callEvent(event);
@@ -126,6 +129,22 @@ public class Commandhome extends EssentialsCommand {
             return "*";
         }
         return Integer.toString(ess.getSettings().getHomeLimit(player));
+    }
+
+    // The configured no-home command, or null when it's unset or its PlaceholderAPI condition isn't "true"
+    private String getNoHomeCommand(final User user) {
+        final String command = StringUtil.safeString(ess.getSettings().getNoHomeCommand()).trim();
+        if (command.isEmpty()) {
+            return null;
+        }
+        final String condition = StringUtil.safeString(ess.getSettings().getNoHomeCommandCondition()).trim();
+        if (!condition.isEmpty()) {
+            if (!ess.getServer().getPluginManager().isPluginEnabled("PlaceholderAPI")
+                || !"true".equalsIgnoreCase(me.clip.placeholderapi.PlaceholderAPI.setPlaceholders(user.getBase(), condition).trim())) {
+                return null;
+            }
+        }
+        return command.startsWith("/") ? command.substring(1) : command;
     }
 
     private void goHome(final User user, final User player, final String home, final Trade charge, final CompletableFuture<Boolean> future) throws Exception {

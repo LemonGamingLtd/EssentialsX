@@ -2188,6 +2188,16 @@ public class Settings implements net.ess3.api.ISettings {
     }
 
     @Override
+    public String getNoHomeCommand() {
+        return config.getString("no-home-command", "");
+    }
+
+    @Override
+    public String getNoHomeCommandCondition() {
+        return config.getString("no-home-command-condition", "");
+    }
+
+    @Override
     public boolean isConfirmHomeOverwrite() {
         return config.getBoolean("confirm-home-overwrite", false);
     }
